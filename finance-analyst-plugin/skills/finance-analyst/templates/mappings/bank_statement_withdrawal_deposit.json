@@ -1,0 +1,30 @@
+{
+  "kind": "bank_transactions",
+  "source_file": "../../examples/raw-exports/bank_statement_hdfc_style.csv",
+  "dayfirst": true,
+  "skip_first_cell_patterns": [
+    "^opening balance",
+    "^closing balance",
+    "^total"
+  ],
+  "columns": {
+    "transaction_date": "Txn Date",
+    "value_date": "Value Date",
+    "narration": "Description",
+    "reference": "Ref No./Cheque No.",
+    "debit": "Withdrawal Amt.",
+    "credit": "Deposit Amt.",
+    "balance": "Closing Balance"
+  },
+  "constants": {
+    "bank_account_ref": "XXXX1234",
+    "currency": "INR"
+  },
+  "blank_pair_zero": [
+    [
+      "debit",
+      "credit"
+    ]
+  ],
+  "_note": "Example: bank statement CSV with withdrawal/deposit columns and DD/MM/YYYY dates."
+}

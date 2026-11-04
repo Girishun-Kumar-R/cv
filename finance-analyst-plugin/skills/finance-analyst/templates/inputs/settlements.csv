@@ -1,0 +1,1 @@
+provider,settlement_id,settlement_date,gross_amount,fees,tax_on_fees,refunds,withholdings,adjustments,net_amount,bank_reference,currency

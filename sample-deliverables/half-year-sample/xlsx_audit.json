@@ -1,0 +1,377 @@
+{
+  "workbook": "dashboard.xlsx",
+  "formulas": 60,
+  "mapped_checks": 60,
+  "unsupported_functions": [],
+  "hardcoded_formula_constants": 0,
+  "inconsistent_formulas": [],
+  "libreoffice": {
+    "status": "ok",
+    "compared": 60,
+    "mismatches": []
+  },
+  "problems": [],
+  "status": "passed",
+  "cells": [
+    {
+      "sheet": "Dashboard",
+      "cell": "B10",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0111\",Data!$A$2:$A$206,0))",
+      "value": 1280000.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B11",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0100\",Data!$A$2:$A$206,0))",
+      "value": 2.981366459627329
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B12",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0108\",Data!$A$2:$A$206,0))",
+      "value": 25.84745762711864
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B13",
+      "formula": "=B6/B5",
+      "value": 0.3559322033898305
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B14",
+      "formula": "=B7/B5",
+      "value": 0.1440677966101695
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B5",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0003\",Data!$A$2:$A$206,0))",
+      "value": 11800000.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B6",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0005\",Data!$A$2:$A$206,0))",
+      "value": 4200000.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B7",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0008\",Data!$A$2:$A$206,0))",
+      "value": 1700000.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B8",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0012\",Data!$A$2:$A$206,0))",
+      "value": 1450000.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B9",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0013\",Data!$A$2:$A$206,0))",
+      "value": 1087500.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B2",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0003\",Data!$A$2:$A$206,0))",
+      "value": 11800000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B3",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0004\",Data!$A$2:$A$206,0))",
+      "value": 7600000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B4",
+      "formula": "=B2-B3",
+      "value": 4200000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B5",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0007\",Data!$A$2:$A$206,0))",
+      "value": 2500000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B6",
+      "formula": "=B4-B5",
+      "value": 1700000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B7",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0010\",Data!$A$2:$A$206,0))",
+      "value": 1600000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B8",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0012\",Data!$A$2:$A$206,0))",
+      "value": 1450000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "C2",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0029\",Data!$A$2:$A$206,0))",
+      "value": 9900000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "C3",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0030\",Data!$A$2:$A$206,0))",
+      "value": 6480000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "C4",
+      "formula": "=C2-C3",
+      "value": 3420000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "C5",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0033\",Data!$A$2:$A$206,0))",
+      "value": 2150000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "C6",
+      "formula": "=C4-C5",
+      "value": 1270000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "C7",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0036\",Data!$A$2:$A$206,0))",
+      "value": 1170000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "C8",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0038\",Data!$A$2:$A$206,0))",
+      "value": 960000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "B2",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0144\",Data!$A$2:$A$206,0))",
+      "value": 200000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "B3",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0148\",Data!$A$2:$A$206,0))",
+      "value": 1500000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "B4",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0152\",Data!$A$2:$A$206,0))",
+      "value": 400000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "B5",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0156\",Data!$A$2:$A$206,0))",
+      "value": 300000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "B6",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0160\",Data!$A$2:$A$206,0))",
+      "value": 11800000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "C2",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0145\",Data!$A$2:$A$206,0))",
+      "value": 250000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "C3",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0149\",Data!$A$2:$A$206,0))",
+      "value": 1400000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "C4",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0153\",Data!$A$2:$A$206,0))",
+      "value": 350000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "C5",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0157\",Data!$A$2:$A$206,0))",
+      "value": 300000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "C6",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0161\",Data!$A$2:$A$206,0))",
+      "value": 12500000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "D2",
+      "formula": "=B2-C2",
+      "value": -50000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "D3",
+      "formula": "=B3-C3",
+      "value": 100000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "D4",
+      "formula": "=B4-C4",
+      "value": 50000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "D5",
+      "formula": "=B5-C5",
+      "value": 0.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "D6",
+      "formula": "=B6-C6",
+      "value": -700000.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "E2",
+      "formula": "=D2/ABS(C2)",
+      "value": -0.2
+    },
+    {
+      "sheet": "Budget",
+      "cell": "E3",
+      "formula": "=D3/ABS(C3)",
+      "value": 0.07142857142857142
+    },
+    {
+      "sheet": "Budget",
+      "cell": "E4",
+      "formula": "=D4/ABS(C4)",
+      "value": 0.14285714285714285
+    },
+    {
+      "sheet": "Budget",
+      "cell": "E5",
+      "formula": "=D5/ABS(C5)",
+      "value": 0.0
+    },
+    {
+      "sheet": "Budget",
+      "cell": "E6",
+      "formula": "=D6/ABS(C6)",
+      "value": -0.056
+    },
+    {
+      "sheet": "Aging",
+      "cell": "B2",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0114\",Data!$A$2:$A$206,0))",
+      "value": 600000.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "B3",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0115\",Data!$A$2:$A$206,0))",
+      "value": 500000.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "B4",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0116\",Data!$A$2:$A$206,0))",
+      "value": 0.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "B5",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0117\",Data!$A$2:$A$206,0))",
+      "value": 400000.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "B6",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0118\",Data!$A$2:$A$206,0))",
+      "value": 300000.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "B7",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0119\",Data!$A$2:$A$206,0))",
+      "value": 400000.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "B8",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0120\",Data!$A$2:$A$206,0))",
+      "value": 0.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "B9",
+      "formula": "=SUM(B2:B8)",
+      "value": 2200000.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "C2",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0122\",Data!$A$2:$A$206,0))",
+      "value": 500000.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "C3",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0123\",Data!$A$2:$A$206,0))",
+      "value": 700000.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "C4",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0124\",Data!$A$2:$A$206,0))",
+      "value": 0.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "C5",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0125\",Data!$A$2:$A$206,0))",
+      "value": 300000.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "C6",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0126\",Data!$A$2:$A$206,0))",
+      "value": 0.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "C7",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0127\",Data!$A$2:$A$206,0))",
+      "value": 0.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "C8",
+      "formula": "=INDEX(Data!$E$2:$E$206,MATCH(\"CALC-0128\",Data!$A$2:$A$206,0))",
+      "value": 0.0
+    },
+    {
+      "sheet": "Aging",
+      "cell": "C9",
+      "formula": "=SUM(C2:C8)",
+      "value": 1500000.0
+    }
+  ]
+}

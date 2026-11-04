@@ -1,0 +1,1 @@
+invoice_number,invoice_date,customer_id,customer_name,sku,channel,quantity,taxable_value,tax_amount,currency

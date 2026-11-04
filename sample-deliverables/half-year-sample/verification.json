@@ -1,0 +1,128 @@
+{
+  "outcome": "passed",
+  "passed_checks": 24,
+  "total_checks": 24,
+  "draft_sha256": "b1c01b47777b06b95566544379c34bff9dbdba340121c85bde2824101e6b947e",
+  "checks": [
+    {
+      "id": "ver_no_fabrication",
+      "status": "passed",
+      "details": "all inputs exist with matching hashes"
+    },
+    {
+      "id": "ver_recompute_figures",
+      "status": "passed",
+      "details": "82 figures recomputed independently and matched"
+    },
+    {
+      "id": "ver_register_tieout",
+      "status": "passed",
+      "details": "244 rendered figures tie to the register"
+    },
+    {
+      "id": "ver_placeholders_resolved",
+      "status": "passed",
+      "details": "none left"
+    },
+    {
+      "id": "ver_narrative_raw_numbers",
+      "status": "passed",
+      "details": "narrative uses placeholders for all figures"
+    },
+    {
+      "id": "ver_cross_footing",
+      "status": "passed",
+      "details": "statement, aging, budget and variance identities hold"
+    },
+    {
+      "id": "ver_claim_evidence",
+      "status": "passed",
+      "details": "every finding and recommendation cites valid evidence"
+    },
+    {
+      "id": "ver_claim_topic_consistency",
+      "status": "passed",
+      "details": "cited figures match the topics mentioned"
+    },
+    {
+      "id": "ver_direction_words",
+      "status": "passed",
+      "details": "no contradictions found"
+    },
+    {
+      "id": "ver_limitations_disclosed",
+      "status": "passed",
+      "details": "every non-ready metric is listed under Limitations"
+    },
+    {
+      "id": "ver_masking",
+      "status": "passed",
+      "details": "no unmasked identifiers detected"
+    },
+    {
+      "id": "ver_boundary_language",
+      "status": "passed",
+      "details": "no prohibited assurance language"
+    },
+    {
+      "id": "ver_disclaimers",
+      "status": "passed",
+      "details": "standard disclaimer present"
+    },
+    {
+      "id": "ver_double_count_guard",
+      "status": "passed",
+      "details": "no bank line or settlement counted twice"
+    },
+    {
+      "id": "ver_conflict_figures",
+      "status": "passed",
+      "details": "conflict figures recompute"
+    },
+    {
+      "id": "ver_status_consistency",
+      "status": "passed",
+      "details": "status line counts equal the issue, reconciliation and calculation registers"
+    },
+    {
+      "id": "ver_profit_labels",
+      "status": "passed",
+      "details": "every profit mention names its level and cites it"
+    },
+    {
+      "id": "ver_savings_claims",
+      "status": "passed",
+      "details": "no unsupported savings claims"
+    },
+    {
+      "id": "ver_leakage_classification",
+      "status": "passed",
+      "details": "no recoverable, reversal or timing item called leakage"
+    },
+    {
+      "id": "ver_evidence_separation",
+      "status": "passed",
+      "details": "verified findings, exceptions, estimates and hypotheses are separated"
+    },
+    {
+      "id": "ver_source_trace",
+      "status": "passed",
+      "details": "75 figure(s) traced to accounts or source rows and re-added"
+    },
+    {
+      "id": "ver_excel_formulas",
+      "status": "passed",
+      "details": "60 formulas evaluated independently, 60 equal their register values; LibreOffice: ok (60 compared, 0 mismatches)"
+    },
+    {
+      "id": "ver_chart_data",
+      "status": "passed",
+      "details": "26 charted value(s) match the register"
+    },
+    {
+      "id": "ver_approval_gates",
+      "status": "passed",
+      "details": "no external or financial action executed; prepared files match approvals"
+    }
+  ]
+}

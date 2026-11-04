@@ -1,0 +1,6 @@
+budget_version,approval_status,period_label,account_class,amount,amount_basis
+FY26-B1,approved,H1 FY2025-26,revenue_from_operations,12500000.00,net_revenue
+FY26-B1,approved,H1 FY2025-26,employee_benefits_expense,1400000.00,tax_exclusive
+FY26-B1,approved,H1 FY2025-26,rent,300000.00,tax_exclusive
+FY26-B1,approved,H1 FY2025-26,marketplace_fees,350000.00,tax_exclusive
+FY26-B1,approved,H1 FY2025-26,advertising,250000.00,tax_exclusive

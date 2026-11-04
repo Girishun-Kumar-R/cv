@@ -1,0 +1,25 @@
+account_id,account_name,source_group,proposed_class,confidence,rule,confirmed
+Sales - Domestic,Sales - Domestic,Sales Accounts,revenue_from_operations,high,group 'Sales Accounts',yes
+Sales Returns,Sales Returns,Sales Accounts,sales_returns_and_allowances,medium,name matches /sales return|returns inward|credit note/,yes
+Interest Received,Interest Received,Indirect Incomes,other_income,medium,name matches /interest (received|income)|dividend/,yes
+Purchases - Traded Goods,Purchases - Traded Goods,Purchase Accounts,purchases_of_stock_in_trade,medium,group 'Purchase Accounts',yes
+Change in Stock,Change in Stock,Purchase Accounts,changes_in_inventories,low,name matches /opening stock|closing stock|change in stock/,yes
+Freight Inward,Freight Inward,Direct Expenses,freight_inward,medium,name matches /freight inward|carriage inward/,yes
+Salaries and Wages,Salaries and Wages,Indirect Expenses,employee_benefits_expense,medium,name matches /salar|wages|bonus|staff welfare|provident|\bpf\b|\besi\b|gratuity/,yes
+Office Rent,Office Rent,Indirect Expenses,rent,medium,name matches /\brent\b/,yes
+Marketplace Commission,Marketplace Commission,Indirect Expenses,marketplace_fees,low,name matches /amazon|flipkart|meesho|marketplace|commission/,yes
+Advertising,Advertising,Indirect Expenses,advertising,medium,name matches /advertis|marketing|promotion/,yes
+Professional Fees,Professional Fees,Indirect Expenses,professional_fees,medium,name matches /audit|legal|professional|consult/,yes
+Depreciation,Depreciation,Indirect Expenses,depreciation_and_amortisation,high,name matches /depreciation|amortis|amortiz/,yes
+Interest on Term Loan,Interest on Term Loan,Indirect Expenses,finance_costs,medium,name matches /interest (on|paid)|loan interest|finance charge|processing fee/,yes
+Provision for Income Tax,Provision for Income Tax,Indirect Expenses,current_tax,low,name matches /income tax|current tax|provision for tax/,yes
+Plant and Machinery,Plant and Machinery,Fixed Assets,property_plant_equipment,medium,group 'Fixed Assets',yes
+Stock in Hand,Stock in Hand,Stock-in-Hand,inventories,high,group 'Stock-in-Hand',yes
+Sundry Debtors,Sundry Debtors,Sundry Debtors,trade_receivables,high,group 'Sundry Debtors',yes
+HDFC Current Account,HDFC Current Account,Bank Accounts,cash_and_cash_equivalents,high,group 'Bank Accounts',yes
+Share Capital,Share Capital,Capital Account,share_capital,low,group 'Capital Account',yes
+Reserves and Surplus,Reserves and Surplus,Reserves & Surplus,reserves_and_surplus,high,group 'Reserves & Surplus',yes
+Term Loan - Bank,Term Loan - Bank,Secured Loans,long_term_borrowings,low,group 'Secured Loans',yes
+Sundry Creditors,Sundry Creditors,Sundry Creditors,trade_payables_others,medium,group 'Sundry Creditors',yes
+GST Payable,GST Payable,Duties & Taxes,gst_payable,medium,tax ledger with credit/zero balance,yes
+Provision for Tax,Provision for Tax,Provisions,short_term_provisions,medium,group 'Provisions',yes

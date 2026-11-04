@@ -1,0 +1,28 @@
+Particulars,Group,Debit,Credit
+Sample Traders Private Limited (fictional),,,
+Trial Balance as at 30-Sep-2025,,,
+Sales - Domestic,Sales Accounts,,"1,20,00,000.00"
+Sales Returns,Sales Accounts,"2,00,000.00",
+Interest Received,Indirect Incomes,,"50,000.00"
+Purchases - Traded Goods,Purchase Accounts,"80,00,000.00",
+Change in Stock,Purchase Accounts,,"5,00,000.00"
+Freight Inward,Direct Expenses,"1,00,000.00",
+Salaries and Wages,Indirect Expenses,"15,00,000.00",
+Office Rent,Indirect Expenses,"3,00,000.00",
+Marketplace Commission,Indirect Expenses,"4,00,000.00",
+Advertising,Indirect Expenses,"2,00,000.00",
+Professional Fees,Indirect Expenses,"1,00,000.00",
+Depreciation,Indirect Expenses,"1,00,000.00",
+Interest on Term Loan,Indirect Expenses,"2,00,000.00",
+Provision for Income Tax,Indirect Expenses,"3,62,500.00",
+Plant and Machinery,Fixed Assets,"19,00,000.00",
+Stock in Hand,Stock-in-Hand,"25,00,000.00",
+Sundry Debtors,Sundry Debtors,"22,00,000.00",
+HDFC Current Account,Bank Accounts,"13,00,000.00",
+Share Capital,Capital Account,,"10,00,000.00"
+Reserves and Surplus,Reserves & Surplus,,"13,00,000.00"
+Term Loan - Bank,Secured Loans,,"25,00,000.00"
+Sundry Creditors,Sundry Creditors,,"15,00,000.00"
+GST Payable,Duties & Taxes,,"1,50,000.00"
+Provision for Tax,Provisions,,"3,62,500.00"
+Grand Total,,"1,93,62,500.00","1,93,62,500.00"

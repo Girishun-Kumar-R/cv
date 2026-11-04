@@ -1,0 +1,5 @@
+supplier_id,supplier_name,supplier_gstin,msme_classification,bill_number,bill_date,due_date,amount_outstanding,currency
+S001,Prime Packaging,,micro,BILL-778,2025-07-01,2025-07-31,300000.00,INR
+S002,Deccan Distributors,,not_msme,BILL-812,2025-08-20,2025-09-19,700000.00,INR
+S003,Swift Logistics,,small,BILL-845,2025-09-10,2025-10-10,250000.00,INR
+S004,City Supplies,,,BILL-860,2025-09-15,2025-10-15,250000.00,INR

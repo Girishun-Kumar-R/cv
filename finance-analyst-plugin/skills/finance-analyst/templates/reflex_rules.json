@@ -1,0 +1,121 @@
+{
+  "_note": "Default Proactive Financial Reflex Engine configuration (finance-analyst.yaml reflex_engine). Override any key in run_config.json under \"reflex\". Approval gates for restricted reads, customer confirmations, external actions and financial writes cannot be relaxed.",
+  "enabled": true,
+  "min_severity": "low",
+  "min_confidence": "0.50",
+  "execution_limits": {
+    "max_triggers": 10,
+    "max_actions_per_trigger": 8,
+    "max_derived_calcs": 150,
+    "max_scenarios": 12,
+    "max_charts": 6,
+    "max_data_requests": 6,
+    "max_runtime_seconds": 60,
+    "max_reflex_rounds": 2
+  },
+  "deduplication": {
+    "merge_same_subject": true,
+    "acknowledged_file": null,
+    "reopen_if_worsened_pct": "0.20"
+  },
+  "approvals": {
+    "connector_read": "auto_if_authorized",
+    "restricted_read": "approval_required",
+    "customer_confirmation": "approval_required",
+    "external_action": "approval_required",
+    "financial_write": "approval_required"
+  },
+  "prioritisation": {
+    "impact_high_share_of_monthly_opex": "0.50",
+    "effort_scores": {
+      "low": 1,
+      "medium": 2,
+      "high": 3
+    },
+    "confidence_scores": {
+      "high": "1.0",
+      "medium": "0.7",
+      "low": "0.4"
+    }
+  },
+  "scenario_parameters": {
+    "dso_reduction_days": 10
+  },
+  "rules": {
+    "rx_critical_data_blockers": {
+      "enabled": true,
+      "severity": "critical",
+      "params": {}
+    },
+    "rx_overdue_receivables": {
+      "enabled": true,
+      "severity": "medium",
+      "params": {
+        "overdue_days": 90,
+        "min_share_of_receivables": "0.10",
+        "escalate_share": "0.25"
+      }
+    },
+    "rx_customer_concentration": {
+      "enabled": true,
+      "severity": "medium",
+      "params": {
+        "top1_share_at_least": "0.30"
+      }
+    },
+    "rx_settlement_shortfall": {
+      "enabled": true,
+      "severity": "high",
+      "params": {}
+    },
+    "rx_bank_book_difference": {
+      "enabled": true,
+      "severity": "medium",
+      "params": {
+        "min_abs_difference_inr": "10.00"
+      }
+    },
+    "rx_margin_decline": {
+      "enabled": true,
+      "severity": "high",
+      "params": {
+        "min_decline": "0.01"
+      }
+    },
+    "rx_cost_category_spike": {
+      "enabled": true,
+      "severity": "low",
+      "params": {
+        "min_growth_gap": "0.10"
+      }
+    },
+    "rx_budget_overrun": {
+      "enabled": true,
+      "severity": "medium",
+      "params": {
+        "min_variance_pct": "0.05",
+        "min_revenue_share": "0.01"
+      }
+    },
+    "rx_msme_payables_timing": {
+      "enabled": true,
+      "severity": "medium",
+      "params": {
+        "max_days": 45
+      }
+    },
+    "rx_liquidity_pressure": {
+      "enabled": true,
+      "severity": "high",
+      "params": {
+        "quick_ratio_below": "1.00",
+        "runway_months_below": "6"
+      }
+    },
+    "rx_partial_metric_upgrade": {
+      "enabled": true,
+      "severity": "low",
+      "params": {}
+    }
+  }
+}

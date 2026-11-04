@@ -1,0 +1,79 @@
+{
+  "_note": "Example narrative for the synthetic sample. Figures appear only as placeholders resolved from the calculation register.",
+  "title": "Half-Year Financial Review",
+  "executive_summary": [
+    "Net revenue was {{metric:net_revenue}}, up {{metric:revenue_growth}} on the comparison half-year ({{metric:net_revenue@comparison}}).",
+    "Gross margin was {{metric:gross_margin}} against {{metric:gross_margin@comparison}}; net profit was {{metric:net_profit}}.",
+    "Cash at bank was {{metric:cash_balance}}; the bank statement and the books differ and need a bank reconciliation.",
+    "One marketplace settlement with an expected net value of {{metric:settlement_variance}} was not found in the bank data provided."
+  ],
+  "findings": [
+    {
+      "statement": "Revenue grew faster than operating expenses ({{metric:revenue_growth}} against {{metric:expense_growth}}), so EBITDA margin rose to {{metric:ebitda_margin}}.",
+      "refs": [
+        "metric:revenue_growth",
+        "metric:expense_growth",
+        "metric:ebitda_margin"
+      ],
+      "label": "fact"
+    },
+    {
+      "statement": "Receivables of {{metric:ar_aging[bucket=181_365]}} are more than 180 days past due, all from one customer.",
+      "refs": [
+        "metric:ar_aging[bucket=181_365]"
+      ],
+      "label": "fact"
+    },
+    {
+      "statement": "Collecting the receivables more than 90 days past due ({{metric:rx_ar_overdue_total[threshold_days=90]}}) would raise cash to {{metric:scn_collect_overdue_cash}}.",
+      "refs": [
+        "metric:rx_ar_overdue_total[threshold_days=90]",
+        "metric:scn_collect_overdue_cash"
+      ],
+      "label": "estimate"
+    },
+    {
+      "statement": "A bill from a supplier classified as micro is outstanding beyond 45 days; payment timing should be reviewed with your Chartered Accountant.",
+      "refs": [
+        "check:ai_msme_payables_timing"
+      ],
+      "label": "fact"
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "Follow up the receivable more than 180 days past due",
+      "rationale": "It is {{metric:ar_aging[bucket=181_365]}} from a single customer and older balances are harder to collect.",
+      "impact": "Up to {{metric:ar_aging[bucket=181_365]}} of cash if collected in full.",
+      "refs": [
+        "metric:ar_aging[bucket=181_365]"
+      ],
+      "confidence": "medium",
+      "effort": "low",
+      "professional_review_needed": false
+    },
+    {
+      "title": "Raise a query on the missing marketplace settlement",
+      "rationale": "Settlement MA-SET-0003 was not located in the bank data provided; it may be in transit or unpaid.",
+      "impact": "Up to {{metric:settlement_variance}} of expected cash.",
+      "refs": [
+        "metric:settlement_variance",
+        "check:ai_settlement_reconciliation"
+      ],
+      "confidence": "medium",
+      "effort": "low",
+      "professional_review_needed": false
+    },
+    {
+      "title": "Prepare the bank reconciliation for the period end",
+      "rationale": "Book and statement balances differ; a bank reconciliation statement should explain the difference before the cash figure is relied on.",
+      "refs": [
+        "CON-BANK-BOOK",
+        "check:ai_cash_movement"
+      ],
+      "confidence": "high",
+      "effort": "low",
+      "professional_review_needed": false
+    }
+  ]
+}

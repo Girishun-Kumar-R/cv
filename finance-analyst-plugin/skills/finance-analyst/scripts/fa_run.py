@@ -1,0 +1,220 @@
+"""Run the deterministic pipeline on a folder of canonical CSVs.
+
+    python3 fa_run.py --input-dir DATA --config run_config.json --out RUN_DIR
+                      [--narrative narrative.json] [--depth simple|comprehensive]
+
+Stages: load -> data-quality & integrity checks -> reconciliation -> metrics ->
+signals -> Proactive Financial Reflex Engine (triggers, read-only investigations,
+derived calculations, scenarios, charts, approval queue) -> render draft report ->
+independent verification -> final report.
+Outputs in RUN_DIR: run_config.json, source_manifest.json, issues.json,
+reconciliation.json, calc_register.json, signals.json, reflex.json, charts/,
+prepared/ (only for approved actions), report_draft.md, render_manifest.json,
+verification.json, report.md, run_manifest.json.
+Reflex options: --approvals approvals.json, --reflex-round N, --no-reflex.
+
+Exit codes: 0 verified (passed / passed_with_warnings), 2 bad configuration,
+3 verification failed (report.md carries a failure banner; do not present its
+figures as verified).
+"""
+from __future__ import annotations
+
+import argparse
+import datetime as _dt
+import json
+import os
+import shutil
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from fa_checks import run_checks  # noqa: E402
+from fa_common import TOOLKIT_VERSION, now_ist, read_json, sha256_file, spec_path, write_json  # noqa: E402
+from fa_data import load_inputs, source_manifest  # noqa: E402
+from fa_metrics import Engine, signals  # noqa: E402
+from fa_reconcile import run_reconciliation  # noqa: E402
+from fa_report import render_report  # noqa: E402
+import fa_reflex  # noqa: E402
+import fa_render  # noqa: E402
+import fa_xlsx  # noqa: E402
+import fa_verify  # noqa: E402
+
+DEFAULT_MATERIALITY = {"absolute_floor_inr": "25000", "relative_threshold": "0.10", "revenue_share_floor": "0.005"}
+
+
+def spec_version():
+    try:
+        with open(spec_path(), encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip().startswith("schema_version:"):
+                    return line.split(":", 1)[1].strip().strip('"')
+    except OSError:
+        pass
+    return "unknown"
+
+
+def validate_config(cfg):
+    errs = []
+    for key in ("company_name", "current_period"):
+        if key not in cfg:
+            errs.append(f"missing '{key}'")
+    for key in ("current_period", "comparison_period"):
+        p = cfg.get(key)
+        if p is None:
+            continue
+        for f in ("label", "start", "end"):
+            if f not in p:
+                errs.append(f"{key}.{f} missing")
+        try:
+            if _dt.date.fromisoformat(p["start"]) > _dt.date.fromisoformat(p["end"]):
+                errs.append(f"{key}: start after end")
+        except (KeyError, ValueError):
+            errs.append(f"{key}: dates must be YYYY-MM-DD")
+    if cfg.get("currency", "INR") != "INR":
+        errs.append("toolkit v0.1 formats INR only; set currency to INR or analyse with code directly")
+    return errs
+
+
+def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple", approvals_path=None, reflex_round=1,
+        reflex=True, formats=("md", "html", "pdf", "xlsx"), excel_libreoffice=True):
+    cfg = read_json(config_path)
+    cfg.setdefault("currency", "INR")
+    cfg.setdefault("reporting_basis", "accrual")
+    cfg["materiality"] = dict(DEFAULT_MATERIALITY, **cfg.get("materiality", {}))
+    errs = validate_config(cfg)
+    if errs:
+        print("configuration errors: " + "; ".join(errs))
+        return 2
+    os.makedirs(out_dir, exist_ok=True)
+    started = now_ist()
+    run_id = "FA-" + _dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+    write_json(os.path.join(out_dir, "run_config.json"), cfg)
+    data = load_inputs(input_dir)
+    if not data["datasets"]:
+        print(f"no canonical input files found in {input_dir}; see references/input-formats.md")
+        return 2
+    sources = source_manifest(data)
+    log = run_checks(data, cfg)
+    recon = run_reconciliation(data, cfg, log)
+    issues = log.items
+    engine = Engine(data, cfg, issues, recon)
+    reg = engine.run()
+    sig = signals(reg, cfg)
+    approvals_copy = os.path.join(out_dir, "approvals.json")
+    if os.path.exists(approvals_copy):
+        os.remove(approvals_copy)
+    approvals = None
+    if approvals_path:
+        approvals = read_json(approvals_path)
+        write_json(approvals_copy, approvals)
+    if reflex:
+        rx = fa_reflex.run_reflex(data, cfg, reg, issues, recon, out_dir, approvals, reflex_round)
+    else:
+        fa_reflex.clear_outputs(out_dir)
+        rx = {"enabled": False, "reason": "disabled for this run (--no-reflex)"}
+    write_json(os.path.join(out_dir, "reflex.json"), rx)
+    narrative = {}
+    if narrative_path:
+        narrative = read_json(narrative_path)
+        shutil.copyfile(narrative_path, os.path.join(out_dir, "narrative.json"))
+    elif os.path.exists(os.path.join(out_dir, "narrative.json")):
+        os.remove(os.path.join(out_dir, "narrative.json"))
+    write_json(os.path.join(out_dir, "source_manifest.json"), sources)
+    write_json(os.path.join(out_dir, "issues.json"), issues)
+    write_json(os.path.join(out_dir, "reconciliation.json"), recon)
+    write_json(os.path.join(out_dir, "calc_register.json"), reg.records)
+    write_json(os.path.join(out_dir, "signals.json"), sig)
+    sv = spec_version()
+    draft, manifest = render_report(reg.records, issues, recon, sources, narrative, cfg, depth, run_id, sv, rx,
+                                    out_dir)
+    with open(os.path.join(out_dir, "report_draft.md"), "w", encoding="utf-8") as fh:
+        fh.write(draft)
+    write_json(os.path.join(out_dir, "render_manifest.json"), manifest)
+    outputs = {}
+    for stale in ("dashboard.xlsx", "dashboard_audit.json", "report.html", "report.pdf"):
+        if os.path.exists(os.path.join(out_dir, stale)):
+            os.remove(os.path.join(out_dir, stale))
+    if "xlsx" in formats:
+        path, msg = fa_xlsx.build(out_dir)
+        outputs["xlsx"] = path or msg
+    ver = fa_verify.verify(out_dir, input_dir, excel_libreoffice)
+    write_json(os.path.join(out_dir, "verification.json"), ver)
+    counts = fa_verify.independent_counts(issues, recon, reg.records)
+    overall = fa_verify.status_overall(counts, ver["outcome"])
+    if ver["outcome"] == "failed":
+        stamp = ("VERIFICATION FAILED — do not rely on these figures (failed: "
+                 + ", ".join(c["id"] for c in ver["checks"] if c["status"] == "failed") + ").")
+    else:
+        stamp = (f"independently recomputed on {now_ist()} (IST), {ver['passed_checks']}/{ver['total_checks']} "
+                 f"verification checks passed ({ver['outcome'].replace('_', ' ')}).")
+    final = draft.replace("STATUS_OVERALL_PLACEHOLDER", overall, 1).replace("VERIFICATION_STATUS_PLACEHOLDER", stamp, 1)
+    final += "\n## Verification\n\n| Check | Status | Details |\n|---|---|---|\n"
+    for c in ver["checks"]:
+        det = c["details"] if isinstance(c["details"], str) else "; ".join(map(str, c["details"]))[:300]
+        final += f"| {c['id']} | {c['status']} | {det} |\n"
+    final += f"\nDraft SHA-256: {ver['draft_sha256']}\n"
+    with open(os.path.join(out_dir, "report.md"), "w", encoding="utf-8") as fh:
+        fh.write(final)
+    if "html" in formats or "pdf" in formats:
+        rr = fa_render.render(out_dir, pdf="pdf" in formats)
+        outputs["html"] = rr["html"]
+        outputs["pdf"] = rr["pdf"] or rr["pdf_status"]
+    write_json(os.path.join(out_dir, "run_manifest.json"), {
+        "run_id": run_id, "spec_version": sv, "toolkit_version": TOOLKIT_VERSION, "started_at": started,
+        "finished_at": now_ist(), "input_dir": os.path.abspath(input_dir), "depth": depth,
+        "datasets": [s["dataset_id"] for s in sources], "issue_count": len(issues),
+        "reflex": {"enabled": rx.get("enabled"), "round": rx.get("round"),
+                   "investigations": len(rx.get("investigations", [])),
+                   "pending_approvals": sum(1 for a in rx.get("approval_requests", [])
+                                            if a["status"] == "pending_approval"),
+                   "data_requests": len(rx.get("data_requests", []))},
+        "calculation_count": len(reg.records), "verification_outcome": ver["outcome"],
+        "outputs": {n: sha256_file(os.path.join(out_dir, n)) for n in ("report.md", "calc_register.json",
+                                                                        "issues.json")},
+        "status": overall, "status_counts": counts, "deliverables": outputs,
+        "outcome": "completed" if ver["outcome"] != "failed" else "partial"})
+    counts = {}
+    for r in reg.records:
+        counts[r["readiness"]] = counts.get(r["readiness"], 0) + 1
+    sev = {}
+    for i in issues:
+        sev[i["severity"]] = sev.get(i["severity"], 0) + 1
+    print(f"run {run_id}: {len(sources)} dataset(s), {len(reg.records)} calculation(s) {counts}, "
+          f"issues {sev or 'none'}")
+    if rx.get("enabled"):
+        pend = sum(1 for a in rx["approval_requests"] if a["status"] == "pending_approval")
+        print(f"reflex: {rx['triggers_found']} trigger(s), {len(rx['investigations'])} investigated, "
+              f"{len(rx['suppressed'])} suppressed, {len(rx['deferred'])} deferred, {len(rx['data_requests'])} data "
+              f"request(s), {pend} approval(s) pending, {len(rx['charts'])} chart(s)")
+    print(f"verification: {ver['outcome']} ({ver['passed_checks']}/{ver['total_checks']})")
+    print(f"status: {overall}")
+    for c in ver["checks"]:
+        if c["status"] != "passed":
+            print(f"  {c['status'].upper()} {c['id']}: {c['details']}")
+    print(f"report: {os.path.join(os.path.abspath(out_dir), 'report.md')}")
+    for k, val in outputs.items():
+        print(f"{k}: {val}")
+    return 3 if ver["outcome"] == "failed" else 0
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--input-dir", required=True)
+    ap.add_argument("--config", required=True)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--narrative")
+    ap.add_argument("--depth", choices=["simple", "comprehensive"], default="simple")
+    ap.add_argument("--approvals", help="approvals.json with approved/rejected reflex approval_ids")
+    ap.add_argument("--reflex-round", type=int, default=1, help="increment after fulfilling reflex data requests")
+    ap.add_argument("--no-reflex", action="store_true", help="skip the Proactive Financial Reflex Engine")
+    ap.add_argument("--formats", default="md,html,pdf,xlsx",
+                    help="comma list of md,html,pdf,xlsx (pdf needs headless Chromium, xlsx needs openpyxl)")
+    ap.add_argument("--no-libreoffice-check", action="store_true",
+                    help="skip the LibreOffice cross-check of dashboard formulas")
+    a = ap.parse_args(argv)
+    return run(a.input_dir, a.config, a.out, a.narrative, a.depth, a.approvals, a.reflex_round, not a.no_reflex,
+               tuple(x.strip() for x in a.formats.split(",")), not a.no_libreoffice_check)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

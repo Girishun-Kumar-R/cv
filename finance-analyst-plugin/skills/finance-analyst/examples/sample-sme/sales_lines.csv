@@ -1,0 +1,12 @@
+invoice_number,invoice_date,customer_id,customer_name,sku,channel,quantity,taxable_value,tax_amount,currency
+INV-1001,2025-04-02,C001,Sunrise Retail,SKU-A,direct_b2b,1000,2000000.00,360000.00,INR
+INV-1002,2025-04-18,C002,Metro Wholesale,SKU-B,direct_b2b,800,1600000.00,288000.00,INR
+INV-1005,2025-04-20,C004,Hilltop Mart,SKU-B,direct_b2b,400,800000.00,144000.00,INR
+INV-1003,2025-05-06,C003,Lakeview Stores,SKU-A,marketplace_a,500,1000000.00,180000.00,INR
+INV-1004,2025-05-22,C001,Sunrise Retail,SKU-C,direct_b2b,600,1200000.00,216000.00,INR
+INV-1020,2025-06-10,C003,Lakeview Stores,SKU-B,direct_b2b,500,1000000.00,180000.00,INR
+INV-1010,2025-06-12,C005,Coastal Traders,SKU-C,marketplace_a,300,600000.00,108000.00,INR
+INV-1030,2025-07-25,C004,Hilltop Mart,SKU-C,marketplace_a,400,800000.00,144000.00,INR
+INV-1032,2025-08-01,C002,Metro Wholesale,SKU-A,direct_b2b,700,1400000.00,252000.00,INR
+INV-1041,2025-09-05,C001,Sunrise Retail,SKU-A,direct_b2b,500,1000000.00,180000.00,INR
+INV-1045,2025-09-12,C005,Coastal Traders,SKU-B,marketplace_a,300,600000.00,108000.00,INR

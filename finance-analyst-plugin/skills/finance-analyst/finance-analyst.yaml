@@ -68,7 +68,7 @@
 spec:
   id: finance-analyst
   kind: master_product_specification
-  schema_version: "1.2.0"
+  schema_version: "1.3.0"
   schema_status: stable
   released: "2026-11-04"
   min_adapter_version: "1.0.0"
@@ -360,7 +360,7 @@ metadata:
 
   versioning:
     scheme: semantic_versioning
-    current: "1.2.0"
+    current: "1.3.0"
     rules:
       major: "Breaking change: removed or renamed keys, changed meaning of an id, changed formula semantics of an existing metric version, any introduction of write capabilities."
       minor: "Backward-compatible additions: new connectors, metrics, modules, reports, checks, optional keys."
@@ -3053,6 +3053,21 @@ reconciliation:
     reversed_entries: "Original and reversal pair cancel; both kept in evidence; excluded from activity metrics only as a pair."
     duplicate_records: "Same strong key twice within a source = duplicate (dq_duplicates); never matched twice; second occurrence excluded with evidence after confirmation for material amounts."
     backdated_accounting_changes: "Entries posted/modified after the period's previous run or after period close (modified_at > close date or prior run) are listed as backdated changes and their effect on previously reported figures is shown."
+  settlement_component_nature:
+    introduced_in: "1.3.0"
+    rule: "Each settlement component and each unlocated amount carries an economic nature; only unexplained items may be called potential leakage, and only after the timing window."
+    components:
+      gross_amount: revenue
+      fees: selling_cost
+      tax_on_fees: recoverable_tax_credit
+      refunds: revenue_reversal
+      withholdings: recoverable_tax_credit
+      adjustments: requires_explanation
+      reserves_or_holds: timing
+    unlocated:
+      within_timing_window: "timing (possibly in transit) — days since settlement <= settlement_to_bank_days"
+      beyond_timing_window: "unexplained shortfall — potential leakage, needs review; never stated as a confirmed loss"
+      conflicting_amount: "unexplained difference — needs review"
   procedure:
     - "Select applicable rules from the plan (only rules whose two sides are both in scope)."
     - "Run strong-key matching; then fallback/fuzzy matching on remaining records."
@@ -3172,6 +3187,7 @@ accounting_integrity:
     - {id: ai_statement_consistency, test: "P&L profit == change in retained earnings/reserves (or partners'/proprietor's capital) adjusted for drawings, dividends, appropriations and capital movements; cash flow statement net change == balance sheet cash change.", severity_on_fail: high}
     - {id: ai_intercompany, test: "Intercompany/inter-branch balances agree between counterparties and are eliminated in consolidated views.", severity_on_fail: high, applies_when: "multiple entities or branches in scope"}
     - {id: ai_suspense_and_unclassified, test: "Suspense/unclassified balances at period end are zero or disclosed with amount and age.", severity_on_fail: "high if material, else medium"}
+    - {id: ai_period_rollup, introduced_in: "1.3.0", test: "When monthly (or quarterly) trial balances are supplied with the period total, every flow metric (revenue, costs, each profit level) summed across the sub-periods equals the period figure exactly, and each month is internally consistent.", severity_on_fail: critical, output: "The months that do not roll up and the difference per metric."}
     - id: ai_msme_payables_timing
       test: "Payables to suppliers classified as micro or small enterprises outstanding beyond the statutory payment period (generally up to 45 days where agreed, otherwise 15 days, under the MSMED Act) are flagged."
       severity_on_fail: medium
@@ -3527,7 +3543,7 @@ metrics:
       unit: money
       aggregation: additive_flow
       zero_denominator: null
-      missing_data: "If no tax provision is booked for an interim period, report profit_before_tax and mark net_profit partial with 'tax provision not booked'; never estimate tax."
+      missing_data: "If no tax provision is booked for the period, net_profit is not stated (needs_data); report profit_before_tax under its own label and never estimate tax. (1.3.0: previously partial, which let profit before tax appear under a 'net profit' label.)"
       interpretation: "Bottom-line profit."
       warnings: []
       visuals: [kpi_tile, waterfall_bridge, line_trend]
@@ -4259,7 +4275,7 @@ metrics:
       formula: "per line k and period: variance_k = actual_k - budget_k; variance_pct_k = safe_div(variance_k, abs(budget_k), not_meaningful); favourable when (income line and variance > 0) or (cost line and variance < 0)"
       required_inputs: ["actuals on budget mapping", "approved budget"]
       alternative_inputs: [{inputs: ["management targets"], caveat: "Labelled target variance."}]
-      assumptions: ["Budget phasing per source or customer-approved method"]
+      assumptions: ["Budget phasing per source or customer-approved method", "Revenue lines are compared on the basis the budget declares (amount_basis): net_revenue (default comparator, the P&L headline definition) or gross_revenue; a tax-inclusive budget is blocked until restated tax-exclusive (no assumed GST rate) (introduced_in 1.3.0)"]
       dependencies: []
       unit: money
       aggregation: additive_flow
@@ -5524,6 +5540,7 @@ report_generation:
     - {order: 4, section: key_metrics, contents: ["metric dashboard with comparisons"]}
     - {order: 5, section: module_sections, contents: ["one section per executed module, ordered by relevance to the objective"]}
     - {order: 6, section: investigations, contents: ["variance decompositions and root causes with evidence levels"]}
+    - {order: 6.5, section: evidence_classes, introduced_in: "1.3.0", contents: ["verified findings (ready calculations only)", "unresolved reconciliation exceptions", "estimates and scenarios (with assumptions)", "hypotheses to test"]}
     - {order: 7, section: risks_anomalies_opportunities, contents: ["risk register", "items for review", "quantified opportunities"]}
     - {order: 8, section: forecasts_and_scenarios, contents: ["forecasts with accuracy", "scenarios and sensitivities"], include_when: "run"}
     - {order: 9, section: recommendations_and_action_plan, contents: ["prioritised recommendations", "30/90-day plan", "metrics to track"]}
@@ -5548,6 +5565,12 @@ report_generation:
   file_naming:
     pattern: "FinanceAnalyst_${customer.company_short}_${report.id}_${run.period_end:YYYYMMDD}_${run.run_id_short}.${ext}"
     rules: ["ASCII letters, digits, underscore and hyphen only", "No personal data in file names"]
+  status_line:
+    introduced_in: "1.3.0"
+    format: "Status: <overall>. Calculations: <verification outcome and checks>. Data validation: <open issues by severity>; <unresolved reconciliation exceptions>; <partial / blocked / needs-data metric counts>."
+    overall_values: {not_verified: "verification failed", verified_with_blocked_items: "critical issues (or a blocking basis rule) block some figures", verified_with_open_exceptions: "calculations verified; names exactly what remains — open data issues (high/medium/low), unresolved reconciliation exceptions, partial or data-limited figures", verified_no_open_exceptions: "calculations verified and no open issues, exceptions, partial or data-limited figures"}
+  definitions_appendix: "Comprehensive reports list the accounting definition (formula and basis) of every metric shown, taken from metrics.registry, so dashboard, charts and text share one definition (1.3.0)."
+  output_formats_1_3: "HTML (print layout, inline SVG charts) always; PDF when a headless browser is available; Excel dashboard with live formulas when openpyxl is available, validated by ver_excel_formulas."
   quality_bar:
     - "Answer first, evidence next, detail last."
     - "No unexplained jargon; first use of a term defines it."
@@ -5583,6 +5606,13 @@ verification:
     - {id: ver_narrative_raw_numbers, introduced_in: "1.1.0", description: "Narrative text written by the agent contains no typed money, percentage or lakh/crore figures; figures enter only through calculation-register placeholders or labelled customer inputs.", pass_rule: "Zero raw figures."}
     - {id: ver_claim_topic_consistency, introduced_in: "1.1.0", description: "Heuristic: a finding that mentions a topic (receivables, payables, cash, margin, settlement, budget, inventory) cites at least one figure from that topic.", pass_rule: "No mismatches; mismatches are warnings that MUST be resolved or justified before delivery."}
     - {id: ver_conflict_figures, introduced_in: "1.1.0", description: "Figures shown in source-conflict records recompute independently from the inputs.", pass_rule: "Exact."}
+    - {id: ver_status_consistency, introduced_in: "1.3.0", description: "The report's status line separates calculation verification from data validation; open-issue, exception and readiness counts in it equal the issue register, reconciliation results and calculation register; nothing is described as fully validated while exceptions are open.", pass_rule: "Exact counts; no contradiction."}
+    - {id: ver_profit_labels, introduced_in: "1.3.0", description: "Every mention of profit names its level (gross, EBITDA, operating, before tax, after tax/net) and cites that metric; 'net profit' is used only when net_profit is ready (tax provision booked).", pass_rule: "Zero mismatches."}
+    - {id: ver_savings_claims, introduced_in: "1.3.0", description: "Words such as saving, save or cost reduction appear only with a customer-supplied or contract-evidenced figure; indicative or mechanical figures are never called savings.", pass_rule: "Zero unsupported claims."}
+    - {id: ver_leakage_classification, introduced_in: "1.3.0", description: "Recoverable tax credits (GST on fees, TCS/TDS withheld), revenue reversals, fees and in-transit timing items are never labelled leakage or loss; 'leakage' is used only for unexplained shortfalls beyond the timing window.", pass_rule: "Zero misclassifications."}
+    - {id: ver_evidence_separation, introduced_in: "1.3.0", description: "Verified findings cite only ready, non-scenario calculations; estimates, scenarios, unresolved reconciliation exceptions and hypotheses are presented in separate labelled sections.", pass_rule: "Zero cross-class citations."}
+    - {id: ver_source_trace, introduced_in: "1.3.0", description: "Every computed figure traces to source datasets by hash and, for ledger and sub-ledger figures, to the contributing accounts or file line numbers; listed source rows re-add to the figure.", pass_rule: "All traced; re-adds exact."}
+    - {id: ver_excel_formulas, introduced_in: "1.3.0", description: "Every formula in a generated workbook is evaluated by an independent evaluator (and, where available, a second spreadsheet engine) and equals the registered value it presents.", pass_rule: "All formulas evaluated; zero mismatches beyond 1e-6 (binary floating point in spreadsheets)."}
     - {id: ver_approval_gates, introduced_in: "1.2.0", description: "No external or financial action is recorded as executed; every prepared artifact corresponds to an approved approval_id with matching scope; gates are never weaker than reflex_engine.action_classes.", pass_rule: "Zero violations."}
   procedure:
     - "Freeze the draft (hash)."
@@ -6030,7 +6060,7 @@ reflex_engine:
     - {id: scn_dso_reduction_cash_release, unit: money, formula: "dso_reduction_days * credit_sales_incl_tax / days(period)  (scenario_modeling.standard_formulas.working_capital_change_cash)", parameters: {dso_reduction_days: 10}}
     - {id: scn_settlement_recovery_cash, unit: money, formula: "cash_balance + sum(rx_settlement_unlocated)"}
     - {id: scn_margin_restoration_price_increase, unit: percent, formula: "cogs / (1 - comparison gross_margin) / net_revenue - 1", assumption: "Volumes and costs unchanged."}
-    - {id: scn_cost_normalisation_saving, unit: money, formula: "actual_k[P] - actual_k[C] * (1 + revenue_growth)", dimension: account_class, assumption: "The category grows only in line with revenue."}
+    - {id: scn_cost_normalisation_saving, unit: money, formula: "actual_k[P] - actual_k[C] * (1 + revenue_growth)", dimension: account_class, assumption: "Indicative gap between actual growth and revenue-proportional growth (1.3.0: reported as an indicative gap, never as a saving; evidence_class indicative)."}
     - {id: scn_msme_clearance_cash_after, unit: money, formula: "cash_balance - rx_msme_overdue_total"}
   outputs:
     files: {reflex_json: "reflex.json (evaluated rules, triggers, suppressed, deferred, investigations, insights, scenarios, recommendations, data requests, approval requests, prepared artifacts)", charts: "charts/<chart_id>.svg + charts/<chart_id>.json (data bound to calc_ids)", prepared: "prepared/* drafts or proposals, created only for approved approval_ids"}
@@ -6092,6 +6122,11 @@ glossary:
 # §34  CHANGELOG
 # =============================================================================
 changelog:
+  - version: "1.3.0"
+    date: "2026-11-04"
+    type: minor
+    summary: "Hardening after a customer-report audit: status line separating calculation verification from data validation; budget revenue basis (amount_basis) with net revenue as default comparator; net_profit not stated without a tax provision; period roll-up check (ai_period_rollup); settlement component economic nature and leakage rules; evidence-class report sections; definitions appendix; source tracing; Excel dashboard formula validation; verification checks ver_status_consistency, ver_profit_labels, ver_savings_claims, ver_leakage_classification, ver_evidence_separation, ver_source_trace, ver_excel_formulas."
+    migration_notes: "budget.csv gains optional amount_basis; reflex scenario scn_cost_normalisation_saving is reported as an indicative gap above revenue-proportional growth, not a saving."
   - version: "1.2.0"
     date: "2026-11-04"
     type: minor

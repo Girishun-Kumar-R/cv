@@ -16,7 +16,7 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation, getcontext
 getcontext().prec = 34
 
 SPEC_FILE_NAME = "finance-analyst.yaml"
-TOOLKIT_VERSION = "0.2.0"
+TOOLKIT_VERSION = "0.3.0"
 FORMULA_VERSION = "1.0"
 ZERO = Decimal("0")
 PAISA = Decimal("0.01")
@@ -142,7 +142,7 @@ TEMPLATES = {
     "budget": {
         "file": "budget.csv",
         "columns": {"budget_version": "str", "approval_status": "str", "period_label": "str",
-                    "account_class": "class", "amount": "dec"},
+                    "account_class": "class", "amount": "dec", "amount_basis": "str"},
         "required": ["budget_version", "approval_status", "period_label", "account_class", "amount"],
     },
     "settlements": {
@@ -347,6 +347,9 @@ def fmt_money(value, mode="narrative", scale="units", negative="minus"):
             return f"({body})" if negative == "parentheses" else f"-{body}"
         return body
     a = abs(value)
+    if mode == "chart" and a < Decimal("100000"):
+        body = f"₹{_group_number(a, 0)}"  # charts: whole rupees below one lakh for legibility
+        return f"-{body}" if neg else body
     if a >= Decimal("10000000"):
         body = f"₹{_group_number(a / Decimal('10000000'), 2)} crore"
     elif a >= Decimal("100000"):

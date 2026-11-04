@@ -1,7 +1,7 @@
 # Finance Analyst AI — Claude plugin
 
 An agentic financial analyst and virtual CFO for Indian SMEs and MSMEs. It follows the master specification
-`skills/finance-analyst/finance-analyst.yaml` (v1.2.0) and uses bundled, tested Python scripts for every figure.
+`skills/finance-analyst/finance-analyst.yaml` (v1.3.0) and uses bundled, tested Python scripts for every figure.
 It is read-only and runs only when you ask.
 
 ## What it does
@@ -15,7 +15,11 @@ It is read-only and runs only when you ask.
 - Calculates 48 financial metrics with exact decimal arithmetic and a calculation register.
 - Lets Claude write findings and recommendations that cite evidence, with every figure inserted from the
   register.
-- Produces one combined Markdown report and verifies it independently before presenting it.
+- Produces one combined report (Markdown, print-ready HTML, PDF when a headless browser exists) and an Excel
+  dashboard with live formulas, and verifies all of them independently before presenting them — including every
+  dashboard formula (own evaluator plus a LibreOffice cross-check when available).
+- States status honestly: calculation verification and data validation are reported separately, with open
+  issues and reconciliation exceptions counted.
 - **Proactive Financial Reflex Engine** — after every analysis, configurable rules detect important findings
   (overdue receivables, settlement shortfalls, customer concentration, budget overruns, cost spikes, margin
   declines, MSME payment timing, liquidity pressure, bank-vs-book differences, data gaps) and automatically run
@@ -46,7 +50,7 @@ Ask, for example:
 - "Reconcile my marketplace settlements with the bank statement."
 - "What should I act on first?" (uses the reflex engine's prioritised actions)
 
-Self-test from `skills/finance-analyst/`: `python3 -m unittest discover -s tests` (47 tests).
+Self-test from `skills/finance-analyst/`: `python3 -m unittest discover -s tests` (74 tests).
 
 ## Privacy and safety
 

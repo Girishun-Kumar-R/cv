@@ -59,7 +59,8 @@ TOPICS = {
         "scn_dso_reduction_cash_release"},
     r"\b(payable|creditor|supplier|vendor)": {
         "ap_aging", "accounts_payable", "dpo", "rx_msme_overdue_total", "rx_msme_overdue_by_supplier",
-        "rx_msme_max_days", "rx_near_term_obligations", "scn_msme_clearance_cash_after"},
+        "rx_msme_max_days", "rx_near_term_obligations", "scn_msme_clearance_cash_after", "rx_cost_growth_gap",
+        "scn_cost_normalisation_saving", "cost_category_variance", "expense_by_category"},
     r"\b(cash|bank balance|runway|burn)": {
         "cash_balance", "net_burn", "cash_runway", "settlement_variance", "rx_bank_book_difference",
         "rx_settlement_unlocated", "rx_near_term_coverage", "scn_collect_overdue_cash", "scn_settlement_recovery_cash",
@@ -129,6 +130,8 @@ def fmt(value, unit, mode, scale):
             body = fnum(v / div, "0.01")
             return f"({body})" if v < 0 else body
         a = abs(v)
+        if mode == "chart" and a < Decimal(100000):
+            return ("-" if v < 0 else "") + f"₹{fnum(a, '1')}"
         if a >= Decimal(10000000):
             body = f"₹{fnum(a / Decimal(10000000), '0.01')} crore"
         elif a >= Decimal(100000):
@@ -175,12 +178,12 @@ def recompute(input_dir, config):
     def bal(rows, classes, which="closing"):
         return sum((nat(r, which) for r in rows if r["account_class"] in classes), Z)
 
-    for key in ("current_period", "comparison_period"):
-        p = config.get(key)
-        if not p or p["label"] not in periods:
+    labels = [(k, config[k]["label"]) for k in ("current_period", "comparison_period") if config.get(k)]
+    labels += [("sub_period", lb) for lb in periods if lb not in {x[1] for x in labels}]
+    for key, lab in labels:
+        if lab not in periods:
             continue
-        rows = periods[p["label"]]
-        lab = p["label"]
+        rows = periods[lab]
         gross = pl(rows, {"revenue_from_operations"})
         ret = pl(rows, {"sales_returns_and_allowances"})
         nr = gross + pl(rows, {"other_operating_revenue"}) - ret
@@ -195,6 +198,8 @@ def recompute(input_dir, config):
                      ("cogs", cogs), ("gross_profit", gp), ("operating_expenses", opex), ("ebitda", ebitda),
                      ("operating_profit", op), ("profit_before_tax", pbt), ("net_profit", npf)):
             out[(m, lab, ())] = v
+        if key == "sub_period":
+            continue
         if nr != 0:
             out[("gross_margin", lab, ())] = gp / nr
             out[("net_margin", lab, ())] = npf / nr
@@ -241,9 +246,17 @@ def recompute(input_dir, config):
         rows = periods[cur["label"]]
         for b in budget:
             if b["period_label"] == cur["label"]:
-                actual = pl(rows, {b["account_class"]})
-                out[("budget_variance", cur["label"],
-                     (("account_class", b["account_class"]), ("measure", "variance")))] = actual - num(b["amount"])
+                basis = (b.get("amount_basis") or "").strip().lower()
+                if basis == "tax_inclusive":
+                    continue
+                if b["account_class"] == "revenue_from_operations":
+                    actual = out.get(("gross_revenue" if basis == "gross_revenue" else "net_revenue", cur["label"], ()))
+                else:
+                    actual = pl(rows, {b["account_class"]})
+                key = (("account_class", b["account_class"]), ("measure", "variance"))
+                out[("budget_variance", cur["label"], key)] = actual - num(b["amount"])
+                out[("budget_variance", cur["label"], (("account_class", b["account_class"]),
+                                                        ("measure", "actual")))] = actual
     return out, periods, bank
 
 
@@ -346,7 +359,12 @@ def recompute_reflex(input_dir, config, register, indep, periods, bank):
             v = (a - b) / abs(b) - rg
         elif m == "rx_budget_shortfall":
             b = next(x for x in budget if x["period_label"] == lab and x["account_class"] == dims["account_class"])
-            v = abs(pl(rows_c, dims["account_class"]) - num(b["amount"]))
+            basis = (b.get("amount_basis") or "").strip().lower()
+            if dims["account_class"] == "revenue_from_operations":
+                actual = indep.get(("gross_revenue" if basis == "gross_revenue" else "net_revenue", lab, ()))
+            else:
+                actual = pl(rows_c, dims["account_class"])
+            v = abs(actual - num(b["amount"]))
         elif m == "rx_msme_overdue_total":
             v = msme(int(dims["max_days"]))[0]
         elif m == "rx_msme_overdue_by_supplier":
@@ -467,7 +485,7 @@ def check_charts(run_dir, rx, by_id):
                 problems.append(f"{ch['chart_id']}: {it['calc_id']} charted {it['value']} but register has "
                                 f"{rec['value']}")
             unit = it.get("unit", spec.get("unit", "money"))
-            expect = fmt(it["value"], unit, "narrative", "units")
+            expect = fmt(it["value"], unit, "chart" if unit == "money" else "narrative", "units")
             if it.get("value_label") != expect:
                 problems.append(f"{ch['chart_id']}: label {it.get('value_label')!r} expected {expect!r}")
             from xml.sax.saxutils import escape as _esc
@@ -476,6 +494,285 @@ def check_charts(run_dir, rx, by_id):
         if "<title" not in svg or "<desc" not in svg:
             problems.append(f"{ch['chart_id']}: missing accessible title/description")
     return problems, n
+
+
+# ---------------------------------------------------------------- 1.3.0 hardening checks
+
+def status_overall(counts, outcome):
+    """Overall status rule shared by fa_run (report_generation.status_line)."""
+    if outcome == "failed":
+        return "NOT VERIFIED"
+    iss, rd = counts["issues"], counts["readiness"]
+    if iss["critical"]:
+        return "Calculations verified; some figures are blocked by critical data issues"
+    if rd["blocked"]:
+        return "Calculations verified; some figures are blocked"
+    remain = []
+    if iss["high"] or iss["medium"] or iss["low"]:
+        remain.append("open data issues")
+    if counts["exceptions"]:
+        remain.append("unresolved reconciliation exceptions")
+    if rd["partial"] or rd["needs_data"]:
+        remain.append("partial or data-limited figures")
+    if not remain:
+        return "Calculations verified; no open data issues or exceptions"
+    text = remain[0] if len(remain) == 1 else ", ".join(remain[:-1]) + " and " + remain[-1]
+    return f"Calculations verified; {text} remain"
+
+
+def independent_counts(issues, recon, register):
+    sev = {k: 0 for k in ("critical", "high", "medium", "low", "informational")}
+    for i in issues:
+        if i.get("status", "open") == "open":
+            sev[i["severity"]] += 1
+    exc = sum(1 for rule in recon.get("rules", []) for r in rule.get("records", [])
+              if r["match_status"] in ("unmatched", "conflicting", "probable_match", "requires_review"))
+    exc += sum(1 for c in recon.get("conflicts", []) if c["status"] != "resolved")
+    rd = {k: sum(1 for r in register if r["readiness"] == k) for k in ("partial", "blocked", "needs_data")}
+    return {"issues": sev, "exceptions": exc, "readiness": rd}
+
+
+STATUS_RE = re.compile(r"Data validation: (\d+) critical, (\d+) high, (\d+) medium, (\d+) low open issue\(s\) "
+                       r"\((\d+) informational\); (\d+) unresolved reconciliation exception\(s\); (\d+) partial, "
+                       r"(\d+) blocked, (\d+) needs-data calculation\(s\)")
+
+
+def check_status(report, issues, recon, register):
+    problems = []
+    m = STATUS_RE.search(report)
+    if not m or "STATUS_OVERALL_PLACEHOLDER" not in report or "VERIFICATION_STATUS_PLACEHOLDER" not in report:
+        return ["status line missing or malformed"]
+    c = independent_counts(issues, recon, register)
+    got = [int(x) for x in m.groups()]
+    want = [c["issues"][k] for k in ("critical", "high", "medium", "low", "informational")] + [c["exceptions"]] + [
+        c["readiness"][k] for k in ("partial", "blocked", "needs_data")]
+    if got != want:
+        problems.append(f"status counts {got} differ from registers {want}")
+    for phrase in ("fully validated", "all checks passed with no exceptions", "no issues found"):
+        if phrase in report.lower() and (c["exceptions"] or sum(c["issues"].values()) - c["issues"]["informational"]):
+            problems.append(f"report says '{phrase}' while issues or exceptions are open")
+    return problems
+
+
+PROFIT_WORD = re.compile(r"\bprofits?\b", re.IGNORECASE)
+PROFIT_QUAL = {"gross": {"gross_profit", "gross_margin"}, "operating": {"operating_profit", "operating_margin"},
+               "ebitda": {"ebitda", "ebitda_margin"}, "before tax": {"profit_before_tax"},
+               "after tax": {"net_profit", "net_margin"}, "net": {"net_profit", "net_margin"}}
+PROFIT_FAMILY = set().union(*PROFIT_QUAL.values())
+SAVINGS_RE = re.compile(r"\b(sav(?:e|es|ed|ing|ings)|cost(?:s)? (?:\S+ )?less|cheaper|cut(?:ting)? (?:the )?costs?|"
+                        r"reduc(?:e|ing|tion)(?: in)?(?: the)? costs?)\b", re.IGNORECASE)
+LEAK_RE = re.compile(r"\b(leak(?:s|age|ages)?|(?:revenue|cash|settlement|financial|money|payout)\s+loss(?:es)?|"
+                     r"lost\s+(?:revenue|cash|money|payouts?)|loss\s+of\s+(?:revenue|cash|money|funds))\b", re.IGNORECASE)
+LEAK_NEG = re.compile(r"\b(?:not|never|no)\s+(?:a |an |any |the )?(?:confirmed |real |actual )?(?:leak\w*|loss\w*)",
+                      re.IGNORECASE)
+EVIDENCE_HEADINGS = ["### Verified findings", "### Unresolved reconciliation exceptions",
+                     "### Estimates and scenarios (not facts)", "### Hypotheses to test"]
+
+
+def _cited(item_text, refs, by_id, register):
+    """Register records cited by placeholders and refs of one item."""
+    recs = []
+    for mm in PLACEHOLDER.finditer(item_text):
+        kind, key, dims_txt, which = mm.group(1), mm.group(2), mm.group(3), mm.group(4)
+        if kind == "calc":
+            if key in by_id:
+                recs.append(by_id[key])
+            continue
+        dims = dict(p.split("=", 1) for p in (dims_txt or "").split(",") if "=" in p)
+        for r in register:
+            if r["metric_id"] == key and all((r["dimension"] or {}).get(k) == v for k, v in dims.items()) and (
+                    bool(dims) or not r["dimension"]):
+                recs.append(r)
+                break
+    for ref in refs or []:
+        if ref in by_id:
+            recs.append(by_id[ref])
+        elif ref.startswith("metric:"):
+            body = ref[7:]
+            mid, _, dims_txt = body.partition("[")
+            dims = dict(p.split("=", 1) for p in dims_txt.rstrip("]").split(",") if "=" in p)
+            for r in register:
+                if r["metric_id"] == mid and all((r["dimension"] or {}).get(k) == v for k, v in dims.items()) and (
+                        bool(dims) or not r["dimension"]):
+                    recs.append(r)
+                    break
+    return recs
+
+
+def text_items(narrative, rx):
+    """(kind, text, refs, evidence_class) for every generated sentence that can carry claims."""
+    out = []
+    for i, t in enumerate(narrative.get("executive_summary") or [], 1):
+        out.append((f"executive_summary #{i}", t, [], "fact"))
+    for i, f in enumerate(narrative.get("findings") or [], 1):
+        cls = {"estimate": "estimate", "hypothesis": "hypothesis", "limited": "fact_with_limitations",
+               "customer_provided": "fact_with_limitations"}.get(f.get("label") or "fact", "fact")
+        out.append((f"finding #{i}", f.get("statement", ""), f.get("refs"), cls))
+    for i, r in enumerate(narrative.get("recommendations") or [], 1):
+        out.append((f"recommendation #{i}", " ".join(str(r.get(k, "")) for k in ("title", "rationale", "impact")),
+                    r.get("refs"), "recommendation"))
+    for inv in (rx or {}).get("investigations", []):
+        for n, ins in enumerate(inv["insights"], 1):
+            out.append((f"reflex insight {inv['investigation_id']}#{n}", ins["text"], ins["refs"],
+                        ins.get("evidence_class", "fact")))
+    for r in (rx or {}).get("recommendations", []):
+        out.append((f"reflex action {r.get('recommendation_id')}",
+                    " ".join(str(r.get(k, "")) for k in ("title", "rationale", "impact")), r.get("refs"),
+                    "recommendation"))
+    return out
+
+
+def check_profit_labels(items, by_id, register):
+    problems = []
+    for kind, text, refs, cls in items:
+        plain = PLACEHOLDER.sub("", INPUT_PLACEHOLDER.sub("", text))
+        cited = {r["metric_id"]: r for r in _cited(text, refs, by_id, register)}
+        for mm in PROFIT_WORD.finditer(plain):
+            before = plain[max(0, mm.start() - 12):mm.start()].lower()
+            after = plain[mm.end():mm.end() + 14].lower()
+            if after.startswith(" and loss") or after.startswith("-and-loss"):
+                continue
+            qual = None
+            for q in ("gross", "operating", "ebitda", "net"):
+                if re.search(rf"\b{q}\s*$", before):
+                    qual = q
+            if re.match(r"\s*(before|after)[ -]tax", after):
+                qual = "before tax" if "before" in after[:8] else "after tax"
+            if qual is None:
+                problems.append(f"{kind}: unqualified 'profit' — say gross, EBITDA, operating, before tax or after tax")
+                continue
+            negated = re.match(r"[^.;]{0,30}\b(?:is |are )?(?:not stated|not available|cannot be stated|unavailable|"
+                               r"withheld)\b", plain[mm.end():], re.IGNORECASE) or re.search(r"\bno\s+(?:\w+\s+)?$",
+                                                                                          before)
+            if negated or cls == "data_gap":
+                continue  # statements that a profit level is NOT available are allowed
+            fam = set(cited) & PROFIT_FAMILY
+            if fam and not fam & PROFIT_QUAL[qual]:
+                problems.append(f"{kind}: says '{qual} profit' but cites {sorted(fam)}")
+            if qual in ("net", "after tax"):
+                npf = cited.get("net_profit") or cited.get("net_margin")
+                if npf is None or npf["readiness"] != "ready":
+                    problems.append(f"{kind}: '{qual} profit' requires a ready net_profit (tax provision booked)")
+    return problems
+
+
+def check_savings(items, by_id, register):
+    problems = []
+    for kind, text, refs, _ in items:
+        plain = PLACEHOLDER.sub("", text)
+        if not SAVINGS_RE.search(INPUT_PLACEHOLDER.sub("", plain)):
+            continue
+        supported = INPUT_PLACEHOLDER.search(text) or any(
+            (r.get("parameters") or {}).get("evidence_class") == "supported" for r in _cited(text, refs, by_id,
+                                                                                            register))
+        if not supported:
+            problems.append(f"{kind}: '{SAVINGS_RE.search(plain).group(0)}' without a customer-supplied or "
+                            "contract-evidenced figure")
+    return problems
+
+
+def check_leakage(items, by_id, register, rx, run_dir):
+    problems = []
+    for kind, text, refs, _ in items:
+        plain = LEAK_NEG.sub("", PLACEHOLDER.sub("", text))
+        plain = re.sub(r"profit\s+and\s+loss", "", plain, flags=re.IGNORECASE)
+        if not LEAK_RE.search(plain):
+            continue
+        ok = any((r["metric_id"] == "rx_settlement_unlocated" and (r.get("parameters") or {}).get("nature") ==
+                  "unexplained") or (r["metric_id"] == "settlement_variance" and (r["dimension"] or {}).get("class")
+                                     == "unexplained") for r in _cited(text, refs, by_id, register))
+        if not ok:
+            problems.append(f"{kind}: uses '{LEAK_RE.search(plain).group(0)}' without citing an unexplained "
+                            "shortfall beyond the timing window")
+    for ch in (rx or {}).get("charts", []):
+        path = os.path.join(run_dir, ch["json"])
+        if os.path.isfile(path):
+            with open(path, encoding="utf-8") as fh:
+                spec = json.load(fh)
+            for s in spec.get("series", []):
+                if s.get("nature") in ("recoverable_tax_credit", "revenue_reversal") and LEAK_RE.search(s["label"]):
+                    problems.append(f"{ch['chart_id']}: '{s['label']}' labels a {s['nature']} as a loss")
+    return problems
+
+
+def check_evidence_separation(items, by_id, register, report, recon):
+    problems = []
+    for h in EVIDENCE_HEADINGS:
+        if h not in report:
+            problems.append(f"report section missing: {h}")
+    for kind, text, refs, cls in items:
+        if cls != "fact" or kind.startswith("executive_summary"):
+            continue
+        for r in _cited(text, refs, by_id, register):
+            prm = r.get("parameters") or {}
+            if prm.get("reflex") == "scenario" or prm.get("evidence_class") in ("indicative", "upper_bound"):
+                problems.append(f"{kind}: verified finding cites scenario/estimate {r['calc_id']} ({r['metric_id']})")
+            elif r["readiness"] != "ready":
+                problems.append(f"{kind}: verified finding cites {r['readiness']} {r['calc_id']} ({r['metric_id']})")
+    sec = report.split("### Unresolved reconciliation exceptions", 1)[1].split("\n### ", 1)[0] \
+        if "### Unresolved reconciliation exceptions" in report else ""
+    for rule in recon.get("rules", []):
+        for r in rule.get("records", []):
+            if r["match_status"] in ("unmatched", "conflicting", "probable_match") and r["settlement_id"] not in sec:
+                problems.append(f"exception {r['settlement_id']} ({r['match_status']}) not listed as unresolved")
+    for c in recon.get("conflicts", []):
+        if c["status"] != "resolved" and c["conflict_id"] not in sec:
+            problems.append(f"open conflict {c['conflict_id']} not listed as unresolved")
+    return problems
+
+
+TB_TRACED = {"gross_revenue", "sales_returns_and_allowances", "net_revenue", "cogs", "operating_expenses",
+             "gross_profit", "ebitda", "operating_profit", "profit_before_tax", "net_profit", "finance_costs",
+             "accounts_receivable", "accounts_payable", "inventory_value", "outstanding_debt", "expense_by_category"}
+READD_TB = {"gross_revenue", "sales_returns_and_allowances", "cogs", "operating_expenses", "finance_costs",
+            "expense_by_category"}
+ROW_TRACED = {"ar_aging": ("ar_open_items.csv", "amount_outstanding"), "ap_aging": ("ap_open_items.csv",
+                                                                                   "amount_outstanding"),
+              "rx_ar_overdue_by_customer": ("ar_open_items.csv", "amount_outstanding"),
+              "rx_customer_open_receivables": ("ar_open_items.csv", "amount_outstanding"),
+              "rx_msme_overdue_by_supplier": ("ap_open_items.csv", "amount_outstanding"),
+              "revenue_by_customer": ("sales_lines.csv", "taxable_value"),
+              "revenue_by_product": ("sales_lines.csv", "taxable_value"),
+              "revenue_by_channel": ("sales_lines.csv", "taxable_value")}
+
+
+def check_source_trace(register, input_dir, periods):
+    problems, traced = [], 0
+    cache = {}
+
+    def lines_of(fname):
+        if fname not in cache:
+            rows = load(os.path.join(input_dir, fname)) or []
+            cache[fname] = {i + 2: r for i, r in enumerate(rows)}
+        return cache[fname]
+    for r in register:
+        if r["value"] is None:
+            continue
+        if not r["inputs"] or any(not i.get("sha256") for i in r["inputs"]):
+            problems.append(f"{r['calc_id']}: no hashed source dataset")
+        prm = r.get("parameters") or {}
+        m = r["metric_id"]
+        if m in TB_TRACED:
+            accts = prm.get("source_accounts")
+            if accts is None or (not accts and Decimal(r["value"]) != 0):
+                problems.append(f"{r['calc_id']} {m}: no contributing accounts listed")
+                continue
+            traced += 1
+            if m in READD_TB:
+                rows = [x for x in periods.get(r["period"]["label"], []) if x["account_id"] in accts]
+                if sum((nat(x, "period") for x in rows), Z) != Decimal(r["value"]):
+                    problems.append(f"{r['calc_id']} {m}: listed accounts do not re-add to the figure")
+        elif m in ROW_TRACED:
+            fname, col = ROW_TRACED[m]
+            rows = prm.get("source_rows")
+            if rows is None:
+                problems.append(f"{r['calc_id']} {m}: no source rows listed")
+                continue
+            traced += 1
+            data = lines_of(fname)
+            if sum((num(data[i][col]) for i in rows if i in data), Z) != Decimal(r["value"]):
+                problems.append(f"{r['calc_id']} {m}: listed rows of {fname} do not re-add to the figure")
+    return problems, traced
 
 
 # ---------------------------------------------------------------- main checks
@@ -492,7 +789,7 @@ def strings_in(obj, skip=("refs", "label", "confidence", "effort", "professional
                 yield from strings_in(v, skip)
 
 
-def verify(run_dir, input_dir):
+def verify(run_dir, input_dir, excel_libreoffice=True):
     def j(name):
         with open(os.path.join(run_dir, name), encoding="utf-8") as fh:
             return json.load(fh)
@@ -752,6 +1049,51 @@ def verify(run_dir, input_dir):
                                      Decimal(str(c["figures"][1]["value"])) != book):
                 cfx.append("bank vs book conflict figures do not recompute")
     add("ver_conflict_figures", not cfx, cfx or "conflict figures recompute")
+
+    # 1.3.0 hardening checks
+    items = text_items(narrative, rx)
+    st = check_status(report, issues, recon, register)
+    add("ver_status_consistency", not st, st or "status line counts equal the issue, reconciliation and calculation "
+                                                 "registers")
+    pl_problems = check_profit_labels(items, by_id, register)
+    add("ver_profit_labels", not pl_problems, pl_problems or "every profit mention names its level and cites it")
+    sv_problems = check_savings(items, by_id, register)
+    add("ver_savings_claims", not sv_problems, sv_problems or "no unsupported savings claims")
+    lk_problems = check_leakage(items, by_id, register, rx, run_dir)
+    add("ver_leakage_classification", not lk_problems, lk_problems or "no recoverable, reversal or timing item called "
+                                                                      "leakage")
+    ev_problems = check_evidence_separation(items, by_id, register, report, recon)
+    add("ver_evidence_separation", not ev_problems, ev_problems or "verified findings, exceptions, estimates and "
+                                                                   "hypotheses are separated")
+    tr_problems, traced = check_source_trace(register, input_dir, periods)
+    add("ver_source_trace", not tr_problems, tr_problems or f"{traced} figure(s) traced to accounts or source rows "
+                                                            "and re-added")
+    months_cf = []
+    sub_labels = {r["period"]["label"] for r in register if r["metric_id"] == "profit_before_tax"} - {
+        config["current_period"]["label"], (config.get("comparison_period") or {}).get("label")}
+    if sub_labels:
+        for metric in ("net_revenue", "gross_profit", "operating_expenses", "ebitda", "profit_before_tax"):
+            vals = [val(metric, lb) for lb in sub_labels]
+            tot = val(metric, config["current_period"]["label"])
+            if None not in vals and tot is not None and sum(vals, Z) != tot:
+                months_cf.append(f"{metric}: months sum to {sum(vals, Z)} vs period {tot}")
+    if months_cf:
+        add("ver_cross_footing", False, months_cf)
+
+    # Excel dashboard formulas (independent evaluator + LibreOffice when present)
+    wb_path = os.path.join(run_dir, "dashboard.xlsx")
+    if os.path.isfile(wb_path):
+        import fa_xlsx_audit
+        res = fa_xlsx_audit.audit(wb_path, register, use_libreoffice=excel_libreoffice)
+        with open(os.path.join(run_dir, "dashboard_audit.json"), "w", encoding="utf-8") as fh:
+            json.dump({k: v for k, v in res.items() if k != "cells"}, fh, indent=2, default=str)
+        add("ver_excel_formulas", res["status"] == "passed",
+            res["problems"] or (f"{res['formulas']} formulas evaluated independently, {res['mapped_checks']} equal "
+                                f"their register values; LibreOffice: {res['libreoffice']['status']}"
+                                + (f" ({res['libreoffice'].get('compared')} compared, 0 mismatches)"
+                                   if res["libreoffice"].get("compared") else "")))
+    else:
+        add("ver_excel_formulas", True, "no workbook generated in this run")
 
     # reflex: chart data and approval gates
     chart_problems, charted = check_charts(run_dir, rx, by_id)

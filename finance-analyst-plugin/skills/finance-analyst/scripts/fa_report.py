@@ -23,7 +23,8 @@ METRIC_NAMES = {
     "net_revenue": "Net revenue", "cogs": "Cost of goods sold", "gross_profit": "Gross profit",
     "gross_margin": "Gross margin", "operating_expenses": "Operating expenses (excl. D&A)", "ebitda": "EBITDA",
     "ebitda_margin": "EBITDA margin", "operating_profit": "Operating profit", "operating_margin": "Operating margin",
-    "profit_before_tax": "Profit before tax", "net_profit": "Net profit", "net_margin": "Net margin",
+    "profit_before_tax": "Profit before tax", "net_profit": "Profit after tax (net profit)",
+    "net_margin": "Net margin (after tax)",
     "effective_tax_rate": "Effective tax rate (books)", "revenue_growth": "Revenue growth",
     "expense_growth": "Operating expense growth", "cost_to_revenue_ratio": "Cost-to-revenue ratio",
     "cash_balance": "Cash and bank balance", "current_ratio": "Current ratio", "quick_ratio": "Quick ratio",
@@ -142,9 +143,16 @@ class Renderer:
             r = self.find(m)
             if r is None:
                 continue
-            row = f"| {METRIC_NAMES.get(m, m)} | {self.cell(r, context='kpi')}"
+            name, cm = METRIC_NAMES.get(m, m), m
+            if m == "net_profit" and r["value"] is None and (r.get("parameters") or {}).get("result_note") == \
+                    "tax_provision_not_booked":
+                r, cm, name = self.find("profit_before_tax"), "profit_before_tax", \
+                    "Profit before tax (no tax provision booked)"
+            if m == "net_margin" and r["value"] is None:
+                continue
+            row = f"| {name} | {self.cell(r, context='kpi')}"
             if self.cmpl:
-                c = self.find(m, self.cmpl)
+                c = self.find(cm, self.cmpl)
                 row += f" | {self.cell(c, context='kpi') if c else '—'}"
             row += f" | {READINESS_BADGE[r['readiness']]} |"
             out.append(row)
@@ -156,9 +164,13 @@ class Renderer:
                  ("Net revenue", "net_revenue", None), ("Cost of goods sold", "cogs", None),
                  ("Gross profit", "gross_profit", None), ("Operating expenses (excl. D&A)", "operating_expenses", None),
                  ("EBITDA", "ebitda", None), ("Operating profit", "operating_profit", None),
-                 ("Profit before tax", "profit_before_tax", None), ("Net profit", "net_profit", None)]
+                 ("Profit before tax", "profit_before_tax", None),
+                 ("Profit after tax (net profit)", "net_profit", None)]
         if self.find("net_revenue") is None:
             return []
+        op = self.find("operating_profit")
+        if op and op["readiness"] == "partial":
+            lines[7] = ("Operating profit (no depreciation booked)", "operating_profit", None)
         periods = [(self.cur, self.cur)] + ([(self.cmpl, self.cmpl)] if self.cmpl else [])
         out = ["## Profit and loss", ""] + self.money_table("Line", lines, periods)
         if self.cmpl:
@@ -246,20 +258,25 @@ class Renderer:
                 and r["dimension"]["account_class"] != "all"]
         if not rows:
             return []
-        out = ["## Budget vs actual", "", "| Line | Actual | Budget | Variance | Variance % | Assessment |",
-               "|---|---:|---:|---:|---:|---|"]
+        out = ["## Budget vs actual", "", "| Line | Actual | Budget | Variance | Variance % | Assessment | Basis |",
+               "|---|---:|---:|---:|---:|---|---|"]
         vals = [Decimal(r["value"]) for r in self.rows("budget_variance") if r["unit"] == "money" and r["value"]]
         scale = choose_scale(vals)
-        out[2] = f"| Line ({SCALE_LABELS[scale]}) | Actual | Budget | Variance | Variance % | Assessment |"
+        out[2] = f"| Line ({SCALE_LABELS[scale]}) | Actual | Budget | Variance | Variance % | Assessment | Basis |"
         for r in rows:
             cls = r["dimension"]["account_class"]
             a = self.find("budget_variance", account_class=cls, measure="actual")
             b = self.find("budget_variance", account_class=cls, measure="budget")
             p = self.find("budget_variance", account_class=cls, measure="variance_pct")
-            fav = (r.get("parameters") or {}).get("favourability") or "—"
-            out.append(f"| {cls.replace('_', ' ').capitalize()} | {self.cell(a, 'table', scale, 'budget')} | "
+            prm = r.get("parameters") or {}
+            fav = prm.get("favourability") or "—"
+            basis = f"actual = {prm.get('comparator_metric')}; budget basis {prm.get('amount_basis')}"
+            label = "Revenue (net, as in P&L)" if prm.get("comparator_metric") == "net_revenue" else (
+                "Revenue (gross)" if prm.get("comparator_metric") == "gross_revenue"
+                else cls.replace('_', ' ').capitalize())
+            out.append(f"| {label} | {self.cell(a, 'table', scale, 'budget')} | "
                        f"{self.cell(b, 'table', scale, 'budget')} | {self.cell(r, 'table', scale, 'budget')} | "
-                       f"{self.cell(p, context='budget')} | {fav} |")
+                       f"{self.cell(p, context='budget')} | {fav} | {basis} |")
         return out + [""]
 
     def settlement_section(self, recon):
@@ -324,17 +341,8 @@ class Renderer:
 
     def narrative_section(self, narrative):
         out = []
-        findings = narrative.get("findings") or []
         recs = narrative.get("recommendations") or []
-        out += ["## Findings", ""]
-        if not findings:
-            out += ["No narrative findings were supplied for this run; the tables above contain the verified "
-                    "figures.", ""]
-        for i, f in enumerate(findings, 1):
-            label = f" *({f['label']})*" if f.get("label") and f["label"] != "fact" else ""
-            refs = ", ".join(f.get("refs") or [])
-            out.append(f"{i}. {self.substitute(f['statement'], f'finding:{i}')}{label} — evidence: {refs or 'none'}")
-        out += ["", "## Recommendations", ""]
+        out += ["## Recommendations", ""]
         if not recs:
             out += ["No recommendations were supplied for this run.", ""]
         for i, r in enumerate(recs, 1):
@@ -349,6 +357,141 @@ class Renderer:
             out.append(f"- Evidence: {', '.join(r.get('refs') or []) or 'none'}")
             out.append("")
         return out
+
+    def status_counts(self, issues, recon):
+        sev = {k: 0 for k in ("critical", "high", "medium", "low", "informational")}
+        for i in issues:
+            if i.get("status", "open") == "open":
+                sev[i["severity"]] += 1
+        exc = self.exceptions(recon)
+        ready = {k: 0 for k in ("partial", "blocked", "needs_data")}
+        for r in self.reg:
+            if r["readiness"] in ready:
+                ready[r["readiness"]] += 1
+        return {"issues": sev, "exceptions": len(exc), "readiness": ready}
+
+    def status_line(self, issues, recon):
+        c = self.status_counts(issues, recon)
+        self.status = c
+        s, rd = c["issues"], c["readiness"]
+        return (f"**Status: STATUS_OVERALL_PLACEHOLDER.** Calculations: VERIFICATION_STATUS_PLACEHOLDER Data "
+                f"validation: {s['critical']} critical, {s['high']} high, {s['medium']} medium, {s['low']} low open "
+                f"issue(s) ({s['informational']} informational); {c['exceptions']} unresolved reconciliation "
+                f"exception(s); {rd['partial']} partial, {rd['blocked']} blocked, {rd['needs_data']} needs-data "
+                "calculation(s).")
+
+    @staticmethod
+    def exceptions(recon):
+        out = []
+        for rule in recon.get("rules", []):
+            for r in rule.get("records", []):
+                if r["match_status"] in ("unmatched", "conflicting", "probable_match", "requires_review"):
+                    out.append(("settlement", r))
+        for cf in recon.get("conflicts", []):
+            if cf["status"] != "resolved":
+                out.append(("conflict", cf))
+        return out
+
+    def evidence_sections(self, narrative, rx, recon):
+        items = {"fact": [], "fact_with_limitations": [], "exception": [], "estimate": [], "hypothesis": [],
+                 "data_gap": []}
+        for i, f in enumerate(narrative.get("findings") or [], 1):
+            cls = {"estimate": "estimate", "hypothesis": "hypothesis", "limited": "fact_with_limitations",
+                   "customer_provided": "fact_with_limitations"}.get(f.get("label") or "fact", "fact")
+            items[cls].append((f["statement"], f.get("refs") or [], f"finding:{i}", "narrative"))
+        for inv in (rx or {}).get("investigations", []):
+            for n, ins in enumerate(inv["insights"], 1):
+                items[ins.get("evidence_class", "fact")].append((ins["text"], ins["refs"],
+                                                                f"reflex:{inv['investigation_id']}:{n}", "auto"))
+        out = ["## Findings by evidence class", "",
+               "Verified findings use only calculations that are ready and are not scenarios. Exceptions, estimates "
+               "and hypotheses are kept separate and are not facts.", ""]
+
+        def block(title, key, empty):
+            lines = [f"### {title}", ""]
+            if not items[key]:
+                lines += [empty, ""]
+                return lines
+            for n, (text, refs, ctx, src) in enumerate(items[key], 1):
+                tag = " *(auto-generated)*" if src == "auto" else ""
+                lines.append(f"{n}. {self.substitute(text, ctx)}{tag} — evidence: {', '.join(refs) or 'none'}")
+            return lines + [""]
+        out += block("Verified findings", "fact", "No verified findings were stated for this run.")
+        if items["fact_with_limitations"]:
+            out += block("Findings with stated limitations (not fully verified inputs)", "fact_with_limitations", "")
+        out += ["### Unresolved reconciliation exceptions", ""]
+        exc = self.exceptions(recon)
+        window = int(self.config.get("reconciliation", {}).get("settlement_to_bank_days", 5))
+        if not exc and not items["exception"]:
+            out += ["None.", ""]
+        for kind, r in exc:
+            if kind == "settlement":
+                out.append(f"- Settlement {r['settlement_id']} ({r['provider']}): {r['match_status'].replace('_', ' ')}"
+                           + (f" — within the {window}-day timing window" if r["match_status"] == "unmatched" and
+                              self._days_since(r) is not None and self._days_since(r) <= window else ""))
+            else:
+                out.append(f"- {r['conflict_id']}: {r['item']} — {r['status'].replace('_', ' ')}")
+        for n, (text, refs, ctx, src) in enumerate(items["exception"], 1):
+            out.append(f"- {self.substitute(text, ctx)} *(auto-generated)* — evidence: {', '.join(refs)}")
+        out.append("")
+        out += block("Estimates and scenarios (not facts)", "estimate", "None.")
+        out += block("Hypotheses to test", "hypothesis", "None.")
+        if items["data_gap"]:
+            out += block("Data gaps affecting results", "data_gap", "")
+        return out
+
+    def _days_since(self, r):
+        import datetime as _dt
+        d = r.get("settlement_date")
+        if not d:
+            return None
+        d = d if isinstance(d, _dt.date) else _dt.date.fromisoformat(str(d)[:10])
+        return (_dt.date.fromisoformat(self.config["current_period"]["end"]) - d).days
+
+    def monthly_section(self, issues):
+        months = sorted({(r["period"]["start"], r["period"]["label"]) for r in self.reg
+                         if r["metric_id"] == "profit_before_tax" and r["period"]["label"] not in (self.cur, self.cmpl)})
+        if not months:
+            return []
+        out = ["## Monthly profit and loss", ""]
+        blockers = [i["issue_id"] for i in issues if "tb_months" in i.get("blocks", []) and i["severity"] == "critical"]
+        if blockers:
+            return out + [f"Withheld: the sub-period trial balances do not reconcile to the period total "
+                          f"({', '.join(blockers)}). Period figures above come from the period trial balance.", ""]
+        lines = [("Net revenue", "net_revenue"), ("Gross profit", "gross_profit"),
+                 ("Operating expenses (excl. D&A)", "operating_expenses"), ("EBITDA", "ebitda"),
+                 ("Profit before tax", "profit_before_tax"), ("Profit after tax (net profit)", "net_profit")]
+        periods = [(lbl, lbl) for _, lbl in months] + [(f"{self.cur} total", self.cur)]
+        return out + self.money_table("Line", [(a, b, None) for a, b in lines], periods) + [
+            "", "Months are separate trial balances; their sum is checked against the period total (ai_period_rollup).",
+            ""]
+
+    def definitions_section(self):
+        seen, out = set(), ["## Appendix — definitions used in this report", "",
+                            "| Metric | Definition (formula) | Basis |", "|---|---|---|"]
+        for r in self.reg:
+            if r["metric_id"] in seen or r["value"] is None:
+                continue
+            seen.add(r["metric_id"])
+            basis = r["basis"] + ("" if r["unit"] != "money" else ", amounts excl. GST")
+            out.append(f"| {METRIC_NAMES.get(r['metric_id'], r['metric_id'])} (`{r['metric_id']}`) | "
+                       f"{r['formula_text']} | {basis} |")
+        return out + [""]
+
+    def trace_section(self):
+        out = ["## Appendix — source trace for key figures", "", "| calc_id | Metric | Source |", "|---|---|---|"]
+        for r in self.reg:
+            p = r.get("parameters") or {}
+            src = None
+            if p.get("source_accounts"):
+                src = "accounts " + ", ".join(p["source_accounts"][:12]) + (" …" if len(p["source_accounts"]) > 12 else "")
+            elif p.get("source_rows"):
+                f = ", ".join(i["file"] for i in r["inputs"]) or "input"
+                src = f"{f} lines " + ", ".join(str(x) for x in p["source_rows"][:15]) + (
+                    " …" if len(p["source_rows"]) > 15 else "")
+            if src and (r["period"] or {}).get("label") == self.cur:
+                out.append(f"| {r['calc_id']} | {r['metric_id']} | {src} |")
+        return out + [""]
 
     def reflex_section(self, rx, depth):
         if not rx or not rx.get("enabled"):
@@ -373,13 +516,7 @@ class Renderer:
                 out.append(f"| {i} | {titles} | {', '.join(inv['rules'])} | {inv['severity']} | "
                            f"{Decimal(str(inv['confidence'])):.2f} |")
             out.append("")
-            insights = [(inv, ins) for inv in invs for ins in inv["insights"]]
-            if insights:
-                out += ["### Insights (auto-generated)", ""]
-                for n, (inv, ins) in enumerate(insights, 1):
-                    out.append(f"{n}. {self.substitute(ins['text'], f'reflex:insight:{n}')} — evidence: "
-                               f"{', '.join(ins['refs'])}")
-                out.append("")
+            out += ["Insights from these investigations appear under Findings by evidence class.", ""]
         scen = [r for r in self.reg if (r.get("parameters") or {}).get("reflex") == "scenario"]
         if scen:
             out += ["### Scenarios (deterministic what-ifs)", "", "| Scenario | Result | Formula / assumption |",
@@ -467,7 +604,7 @@ class Renderer:
                + (f" compared with **{self.cmpl}**" if self.cmpl else "") +
                f" · Basis: {c.get('reporting_basis', 'accrual')} · Currency: {c.get('currency', 'INR')} · "
                f"Run {run_id} · Generated {now_ist()} (IST)", "",
-               "Verification: VERIFICATION_STATUS_PLACEHOLDER", ""]
+               self.status_line(issues, recon), ""]
         out += ["## Executive summary", ""]
         es = narrative.get("executive_summary") or []
         if es:
@@ -475,9 +612,10 @@ class Renderer:
         else:
             out += ["No narrative summary was supplied; key metrics follow.", ""]
         out += self.kpi_section()
+        out += self.evidence_sections(narrative, reflex, recon)
         out += self.narrative_section(narrative)
-        out += self.reflex_section(reflex, depth)
         out += self.pnl_section()
+        out += self.monthly_section(issues)
         if depth == "comprehensive":
             out += self.expenses_section()
         out += self.balance_section()
@@ -487,6 +625,7 @@ class Renderer:
         out += self.budget_section()
         out += self.settlement_section(recon)
         out += self.conflicts_section(recon)
+        out += self.reflex_section(reflex, depth)
         out += self.issues_section(issues, depth)
         out += self.limitations_section()
         out += ["## Scope, sources and method", ""]
@@ -500,6 +639,8 @@ class Renderer:
                 "- Materiality for highlighting movements: two of (≥ ₹25,000; ≥ 10% of base; ≥ 0.5% of net "
                 "revenue) unless configured otherwise.", ""]
         if depth == "comprehensive":
+            out += self.definitions_section()
+            out += self.trace_section()
             out += ["## Appendix — calculation register", "",
                     "| calc_id | metric | dimension | period | value | readiness |", "|---|---|---|---|---:|---|"]
             for r in self.reg:

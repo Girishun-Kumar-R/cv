@@ -56,7 +56,7 @@ class Base(unittest.TestCase):
     def run_fa(self, cfg_path=None, approvals=None, round_no=1, reflex=True, narrative=None, depth="comprehensive"):
         with redirect_stdout(io.StringIO()):
             code = fa_run.run(self.data, cfg_path or os.path.join(self.data, "run_config.json"), self.out, narrative,
-                              depth, approvals, round_no, reflex)
+                              depth, approvals, round_no, reflex, formats=("md",))
         self.rx = read_json(os.path.join(self.out, "reflex.json"))
         self.reg = read_json(os.path.join(self.out, "calc_register.json"))
         self.ver = read_json(os.path.join(self.out, "verification.json"))
@@ -265,8 +265,8 @@ class TestThresholdsDedupLimits(Base):
         cfg, _ = self.config(min_severity="high")
         self.run_fa(cfg)
         self.assertEqual({i["severity"] for i in self.rx["investigations"]}, {"high"})
-        self.assertEqual(sorted(i["subject"] for i in self.rx["investigations"]),
-                         ["receivables", "settlement:MA-SET-0003"])
+        # 1.3.0: MA-SET-0003 is within the 5-day timing window, so it is a low-severity timing item, not high
+        self.assertEqual(sorted(i["subject"] for i in self.rx["investigations"]), ["receivables"])
         self.assertIn("below_min_severity", {s["reason"] for s in self.rx["suppressed"]})
 
     def test_rule_disable_and_severity_override(self):

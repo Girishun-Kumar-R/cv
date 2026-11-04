@@ -1,0 +1,756 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Half-Year Financial Review — Sample Traders Private Limited (fictional)</title><style>
+@page { size: A4; margin: 16mm 14mm 18mm 14mm;
+  @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 8pt Helvetica, Arial, sans-serif;
+                  color: #666; }
+  @bottom-left { content: "Finance Analyst report — decision support, not an audit opinion"; font: 8pt Helvetica,
+                 Arial, sans-serif; color: #666; } }
+:root { --ink: #1d2733; --muted: #5c6b7a; --rule: #d5dde6; --head: #eef3f8; --ok: #1f7a4d; --warn: #9a5b00;
+        --bad: #b3261e; }
+html { font: 10pt/1.42 Helvetica, Arial, sans-serif; color: var(--ink); }
+body { margin: 0 auto; max-width: 182mm; }
+h1 { font-size: 18pt; margin: 0 0 4pt; }
+h2 { font-size: 13pt; margin: 16pt 0 6pt; padding-bottom: 3pt; border-bottom: 1.5pt solid var(--ink);
+     break-after: avoid; }
+h3 { font-size: 11pt; margin: 12pt 0 4pt; break-after: avoid; }
+p, li { orphans: 3; widows: 3; }
+.status { border: 1pt solid var(--rule); border-left: 5pt solid var(--warn); padding: 6pt 8pt; margin: 8pt 0 10pt;
+          background: #fffaf0; break-inside: avoid; }
+.status.ok { border-left-color: var(--ok); background: #f2fbf6; }
+.status.bad { border-left-color: var(--bad); background: #fdf3f2; }
+table { border-collapse: collapse; width: 100%; margin: 4pt 0 8pt; font-size: 8.8pt; break-inside: auto; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
+th { background: var(--head); text-align: left; font-weight: 600; }
+th, td { border: 0.5pt solid var(--rule); padding: 3pt 5pt; vertical-align: top; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr:nth-child(even) td { background: #fafcfe; }
+figure { margin: 8pt 0 12pt; break-inside: avoid; }
+figure svg { width: 100%; height: auto; display: block; }
+figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 3pt; }
+blockquote { margin: 6pt 0; padding: 4pt 8pt; border-left: 3pt solid var(--rule); color: var(--muted); }
+code { font-size: 8.5pt; background: #f3f5f7; padding: 0 2pt; }
+em { color: var(--muted); }
+.ev { display: block; font-size: 7.5pt; color: var(--muted); }
+li { margin-bottom: 2pt; }
+</style></head><body><h1>Half-Year Financial Review — Sample Traders Private Limited (fictional)</h1>
+<p>Period: <strong>H1 FY2025-26</strong> (2025-04-01 to 2025-09-30) compared with <strong>H1 FY2024-25</strong> · Basis: accrual · Currency: INR · Run FA-20261104-081719 · Generated 2026-11-04T13:47:19+05:30 (IST)</p>
+<div class="status "><strong>Status: Calculations verified; open data issues, unresolved reconciliation exceptions and partial or data-limited figures remain.</strong> Calculations: independently recomputed on 2026-11-04T13:47:21+05:30 (IST), 24/24 verification checks passed (passed). Data validation: 0 critical, 1 high, 3 medium, 0 low open issue(s) (1 informational); 3 unresolved reconciliation exception(s); 3 partial, 0 blocked, 0 needs-data calculation(s).</div>
+<h2>Executive summary</h2>
+<ul>
+<li>Net revenue was ₹1.18 crore, up 19.2% on the comparison half-year (₹99.00 lakh).</li>
+<li>Gross margin was 35.6% against 34.5%; net profit was ₹10.88 lakh.</li>
+<li>Cash at bank was ₹12.80 lakh; the bank statement and the books differ and need a bank reconciliation.</li>
+<li>One marketplace settlement with an expected net value of ₹2.46 lakh ⚠ was not found in the bank data provided.</li>
+</ul>
+<h2>Key metrics</h2>
+<table><thead><tr><th class="">Metric</th><th class="num">H1 FY2025-26</th><th class="num">H1 FY2024-25</th><th class="">Readiness</th></tr></thead><tbody>
+<tr><td class="">Net revenue</td><td class="num">₹1.18 crore</td><td class="num">₹99.00 lakh</td><td class="">ready</td></tr>
+<tr><td class="">Revenue growth</td><td class="num">19.2%</td><td class="num">—</td><td class="">ready</td></tr>
+<tr><td class="">Gross margin</td><td class="num">35.6%</td><td class="num">34.5%</td><td class="">ready</td></tr>
+<tr><td class="">EBITDA margin</td><td class="num">14.4%</td><td class="num">12.8%</td><td class="">ready</td></tr>
+<tr><td class="">Profit after tax (net profit)</td><td class="num">₹10.88 lakh</td><td class="num">₹7.45 lakh</td><td class="">ready</td></tr>
+<tr><td class="">Net margin (after tax)</td><td class="num">9.2%</td><td class="num">7.5%</td><td class="">ready</td></tr>
+<tr><td class="">Cash and bank balance</td><td class="num">₹12.80 lakh</td><td class="num">—</td><td class="">ready</td></tr>
+<tr><td class="">Current ratio</td><td class="num">2.98</td><td class="num">—</td><td class="">ready</td></tr>
+<tr><td class="">Days sales outstanding</td><td class="num">26 days</td><td class="num">—</td><td class="">ready</td></tr>
+<tr><td class="">Cash conversion cycle</td><td class="num">48 days ⚠</td><td class="num">—</td><td class="">partial ⚠</td></tr>
+<tr><td class="">Debt-to-equity</td><td class="num">0.74</td><td class="num">—</td><td class="">ready</td></tr>
+<tr><td class="">Cash runway</td><td class="num">N/A</td><td class="num">—</td><td class="">ready</td></tr>
+</tbody></table>
+<h2>Findings by evidence class</h2>
+<p>Verified findings use only calculations that are ready and are not scenarios. Exceptions, estimates and hypotheses are kept separate and are not facts.</p>
+<h3>Verified findings</h3>
+<ol>
+<li>Revenue grew faster than operating expenses (19.2% against 16.3%), so EBITDA margin rose to 14.4%. <span class="ev">evidence: metric:revenue_growth, metric:expense_growth, metric:ebitda_margin</span></li>
+<li>Receivables of ₹4.00 lakh are more than 180 days past due, all from one customer. <span class="ev">evidence: metric:ar_aging[bucket=181_365]</span></li>
+<li>A bill from a supplier classified as micro is outstanding beyond 45 days; payment timing should be reviewed with your Chartered Accountant. <span class="ev">evidence: check:ai_msme_payables_timing</span></li>
+<li>₹7.00 lakh of receivables (31.8%) is more than 90 days past due; the largest amount is with Coastal Traders (₹4.00 lakh). <em>(auto-generated)</em> <span class="ev">evidence: CALC-0170, CALC-0171, CALC-0172</span></li>
+<li>Sunrise Retail accounts for 35.0% of sales register value; open receivables from Sunrise Retail are ₹6.00 lakh. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0180, CALC-0183</span></li>
+<li>Revenue from operations is ₹7.00 lakh below budget (-5.6%). <em>(auto-generated)</em> <span class="ev">evidence: CALC-0184, metric:budget_variance[account_class=revenue_from_operations,measure=variance_pct]</span></li>
+<li>Bills of ₹3.00 lakh from suppliers classified micro/small are outstanding beyond 45 days (oldest 91 days). <em>(auto-generated)</em> <span class="ev">evidence: CALC-0185, CALC-0187, check:ai_msme_payables_timing</span></li>
+<li>Marketplace fees grew 14.1% faster than revenue (increase ₹1.00 lakh). <em>(auto-generated)</em> <span class="ev">evidence: CALC-0189, metric:cost_category_variance[account_class=marketplace_fees,measure=amount]</span></li>
+<li>Marketplace fees is ₹50,000.00 above budget (14.3%). <em>(auto-generated)</em> <span class="ev">evidence: CALC-0191, metric:budget_variance[account_class=marketplace_fees,measure=variance_pct]</span></li>
+<li>Employee benefits expense is ₹1.00 lakh above budget (7.1%). <em>(auto-generated)</em> <span class="ev">evidence: CALC-0192, metric:budget_variance[account_class=employee_benefits_expense,measure=variance_pct]</span></li>
+<li>Advertising grew 14.1% faster than revenue (increase ₹50,000.00). <em>(auto-generated)</em> <span class="ev">evidence: CALC-0204, metric:cost_category_variance[account_class=advertising,measure=amount]</span></li>
+</ol>
+<h3>Unresolved reconciliation exceptions</h3>
+<ul>
+<li>Settlement GX-SET-0002 (gateway_x): probable match</li>
+<li>Settlement MA-SET-0003 (marketplace_a): unmatched — within the 5-day timing window</li>
+<li>CON-BANK-BOOK: cash and bank balance at 2025-09-30 — explained pending brs</li>
+<li>The bank statement differs from the book balance by -₹20,000.00 at period end; book-side bank ledger lines are requested to explain it. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0193, CON-BANK-BOOK</span></li>
+<li>Settlement MA-SET-0003 from marketplace_a with expected net ₹2.46 lakh was not located in the bank data provided (5 days after the settlement date at period end). This is within the 5-day timing window, so it is treated as a timing difference (possibly in transit), not a loss; later bank lines are requested. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0194, CALC-0195</span></li>
+</ul>
+<h3>Estimates and scenarios (not facts)</h3>
+<ol>
+<li>Collecting the receivables more than 90 days past due (₹7.00 lakh) would raise cash to ₹19.80 lakh. <span class="ev">evidence: metric:rx_ar_overdue_total[threshold_days=90], metric:scn_collect_overdue_cash</span></li>
+<li>Scenario (receivables): collecting it in full would raise cash to ₹19.80 lakh; DSO would be 21 days instead of 26 days. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0176, CALC-0177, metric:dso</span></li>
+<li>Scenario (MSME bills): paying them now would leave cash at ₹9.80 lakh. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0188</span></li>
+<li>Indicative only: ₹42,424.24 of the marketplace fees increase is above what revenue growth alone would explain. This is not evidence that the amount can be reduced; vendor or contract evidence is needed. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0190</span></li>
+<li>If all unlocated settlements are received, cash would be ₹15.26 lakh (scenario). <em>(auto-generated)</em> <span class="ev">evidence: CALC-0203</span></li>
+<li>Indicative only: ₹21,212.12 of the advertising increase is above what revenue growth alone would explain. This is not evidence that the amount can be reduced; vendor or contract evidence is needed. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0205</span></li>
+</ol>
+<h3>Hypotheses to test</h3>
+<ol>
+<li>Hypothesis: the faster growth of marketplace fees may reflect a rate or contract change rather than volume; vendor bills would confirm or reject this. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0189</span></li>
+<li>Hypothesis: the faster growth of advertising may reflect a rate or contract change rather than volume; vendor bills would confirm or reject this. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0204</span></li>
+</ol>
+<h3>Data gaps affecting results</h3>
+<ol>
+<li>DPO uses COGS as its denominator; a purchase register would make DPO and the cash conversion cycle exact. <em>(auto-generated)</em> <span class="ev">evidence: CALC-0109, metric:dpo</span></li>
+</ol>
+<h2>Recommendations</h2>
+<h3>1. Follow up the receivable more than 180 days past due</h3>
+<p>It is ₹4.00 lakh from a single customer and older balances are harder to collect.</p>
+<ul>
+<li>Expected impact: Up to ₹4.00 lakh of cash if collected in full.</li>
+<li>Confidence: medium; effort: low</li>
+<li>Evidence: metric:ar_aging[bucket=181_365]</li>
+</ul>
+<h3>2. Raise a query on the missing marketplace settlement</h3>
+<p>Settlement MA-SET-0003 was not located in the bank data provided; it may be in transit or unpaid.</p>
+<ul>
+<li>Expected impact: Up to ₹2.46 lakh ⚠ of expected cash.</li>
+<li>Confidence: medium; effort: low</li>
+<li>Evidence: metric:settlement_variance, check:ai_settlement_reconciliation</li>
+</ul>
+<h3>3. Prepare the bank reconciliation for the period end</h3>
+<p>Book and statement balances differ; a bank reconciliation statement should explain the difference before the cash figure is relied on.</p>
+<ul>
+<li>Confidence: high; effort: low</li>
+<li>Evidence: CON-BANK-BOOK, check:ai_cash_movement</li>
+</ul>
+<h2>Profit and loss</h2>
+<table><thead><tr><th class="">Line (₹ in lakhs)</th><th class="num">H1 FY2025-26</th><th class="num">H1 FY2024-25</th></tr></thead><tbody>
+<tr><td class="">Gross revenue</td><td class="num">120.00</td><td class="num">100.00</td></tr>
+<tr><td class="">Less: returns &amp; allowances</td><td class="num">2.00</td><td class="num">1.00</td></tr>
+<tr><td class="">Net revenue</td><td class="num">118.00</td><td class="num">99.00</td></tr>
+<tr><td class="">Cost of goods sold</td><td class="num">76.00</td><td class="num">64.80</td></tr>
+<tr><td class="">Gross profit</td><td class="num">42.00</td><td class="num">34.20</td></tr>
+<tr><td class="">Operating expenses (excl. D&amp;A)</td><td class="num">25.00</td><td class="num">21.50</td></tr>
+<tr><td class="">EBITDA</td><td class="num">17.00</td><td class="num">12.70</td></tr>
+<tr><td class="">Operating profit</td><td class="num">16.00</td><td class="num">11.70</td></tr>
+<tr><td class="">Profit before tax</td><td class="num">14.50</td><td class="num">9.60</td></tr>
+<tr><td class="">Profit after tax (net profit)</td><td class="num">10.88</td><td class="num">7.45</td></tr>
+</tbody></table>
+<p>Change vs H1 FY2024-25:</p>
+<table><thead><tr><th class="">Line (₹ in lakhs)</th><th class="num">Change</th></tr></thead><tbody>
+<tr><td class="">Gross revenue</td><td class="num">20.00</td></tr>
+<tr><td class="">Less: returns &amp; allowances</td><td class="num">1.00</td></tr>
+<tr><td class="">Net revenue</td><td class="num">19.00</td></tr>
+<tr><td class="">Cost of goods sold</td><td class="num">11.20</td></tr>
+<tr><td class="">Gross profit</td><td class="num">7.80</td></tr>
+<tr><td class="">Operating expenses (excl. D&amp;A)</td><td class="num">3.50</td></tr>
+<tr><td class="">EBITDA</td><td class="num">4.30</td></tr>
+<tr><td class="">Operating profit</td><td class="num">4.30</td></tr>
+<tr><td class="">Profit before tax</td><td class="num">4.90</td></tr>
+<tr><td class="">Profit after tax (net profit)</td><td class="num">3.43</td></tr>
+</tbody></table>
+<table><thead><tr><th class="">Line</th><th class="num">Change %</th></tr></thead><tbody>
+<tr><td class="">Gross revenue</td><td class="num">20.0%</td></tr>
+<tr><td class="">Less: returns &amp; allowances</td><td class="num">100.0%</td></tr>
+<tr><td class="">Net revenue</td><td class="num">19.2%</td></tr>
+<tr><td class="">Cost of goods sold</td><td class="num">17.3%</td></tr>
+<tr><td class="">Gross profit</td><td class="num">22.8%</td></tr>
+<tr><td class="">Operating expenses (excl. D&amp;A)</td><td class="num">16.3%</td></tr>
+<tr><td class="">EBITDA</td><td class="num">33.9%</td></tr>
+<tr><td class="">Operating profit</td><td class="num">36.8%</td></tr>
+<tr><td class="">Profit before tax</td><td class="num">51.0%</td></tr>
+<tr><td class="">Profit after tax (net profit)</td><td class="num">46.0%</td></tr>
+</tbody></table>
+<table><thead><tr><th class="">Margin</th><th class="num">H1 FY2025-26</th><th class="num">H1 FY2024-25</th></tr></thead><tbody>
+<tr><td class="">Gross margin</td><td class="num">35.6%</td><td class="num">34.5%</td></tr>
+<tr><td class="">EBITDA margin</td><td class="num">14.4%</td><td class="num">12.8%</td></tr>
+<tr><td class="">Operating margin</td><td class="num">13.6%</td><td class="num">11.8%</td></tr>
+<tr><td class="">Net margin (after tax)</td><td class="num">9.2%</td><td class="num">7.5%</td></tr>
+<tr><td class="">Cost-to-revenue ratio</td><td class="num">85.6%</td><td class="num">87.2%</td></tr>
+</tbody></table>
+<h2>Expenses by category</h2>
+<table><thead><tr><th class="">Category (₹ in lakhs)</th><th class="num">H1 FY2025-26</th><th class="num">H1 FY2024-25</th></tr></thead><tbody>
+<tr><td class="">Advertising</td><td class="num">2.00</td><td class="num">1.50</td></tr>
+<tr><td class="">Changes in inventories</td><td class="num">(5.00)</td><td class="num">(2.00)</td></tr>
+<tr><td class="">Depreciation and amortisation</td><td class="num">1.00</td><td class="num">1.00</td></tr>
+<tr><td class="">Employee benefits expense</td><td class="num">15.00</td><td class="num">13.00</td></tr>
+<tr><td class="">Finance costs</td><td class="num">2.00</td><td class="num">2.50</td></tr>
+<tr><td class="">Freight inward</td><td class="num">1.00</td><td class="num">0.80</td></tr>
+<tr><td class="">Marketplace fees</td><td class="num">4.00</td><td class="num">3.00</td></tr>
+<tr><td class="">Professional fees</td><td class="num">1.00</td><td class="num">1.00</td></tr>
+<tr><td class="">Purchases of stock in trade</td><td class="num">80.00</td><td class="num">66.00</td></tr>
+<tr><td class="">Rent</td><td class="num">3.00</td><td class="num">3.00</td></tr>
+</tbody></table>
+<h2>Liquidity, working capital and debt</h2>
+<table><thead><tr><th class="">Balance at 2025-09-30 (₹ in lakhs)</th><th class="num">Amount</th></tr></thead><tbody>
+<tr><td class="">Cash and bank (statement)</td><td class="num">12.80</td></tr>
+<tr><td class="">Trade receivables</td><td class="num">22.00</td></tr>
+<tr><td class="">Inventory</td><td class="num">25.00</td></tr>
+<tr><td class="">Trade payables</td><td class="num">15.00</td></tr>
+<tr><td class="">Working capital</td><td class="num">39.88</td></tr>
+<tr><td class="">Operating working capital</td><td class="num">32.00</td></tr>
+<tr><td class="">Outstanding borrowings</td><td class="num">25.00</td></tr>
+</tbody></table>
+<table><thead><tr><th class="">Indicator</th><th class="num">Value</th><th class="">Readiness</th></tr></thead><tbody>
+<tr><td class="">Current ratio</td><td class="num">2.98</td><td class="">ready</td></tr>
+<tr><td class="">Quick ratio</td><td class="num">1.74</td><td class="">ready</td></tr>
+<tr><td class="">Days sales outstanding</td><td class="num">26 days</td><td class="">ready</td></tr>
+<tr><td class="">Days inventory outstanding</td><td class="num">54 days</td><td class="">ready</td></tr>
+<tr><td class="">Days payables outstanding</td><td class="num">33 days ⚠</td><td class="">partial ⚠</td></tr>
+<tr><td class="">Cash conversion cycle</td><td class="num">48 days ⚠</td><td class="">partial ⚠</td></tr>
+<tr><td class="">Inventory turnover</td><td class="num">3.38</td><td class="">ready</td></tr>
+<tr><td class="">Interest coverage</td><td class="num">8.00</td><td class="">ready</td></tr>
+<tr><td class="">Debt-to-equity</td><td class="num">0.74</td><td class="">ready</td></tr>
+<tr><td class="">Average monthly net burn</td><td class="num">₹0.00</td><td class="">ready</td></tr>
+<tr><td class="">Cash runway</td><td class="num">N/A</td><td class="">ready</td></tr>
+</tbody></table>
+<h2>Receivables aging</h2>
+<table><thead><tr><th class="">Bucket (days past due) (₹ in lakhs)</th><th class="num">Outstanding</th></tr></thead><tbody>
+<tr><td class="">Not due</td><td class="num">6.00</td></tr>
+<tr><td class="">1–30 days</td><td class="num">5.00</td></tr>
+<tr><td class="">31–60 days</td><td class="num">0.00</td></tr>
+<tr><td class="">61–90 days</td><td class="num">4.00</td></tr>
+<tr><td class="">91–180 days</td><td class="num">3.00</td></tr>
+<tr><td class="">181–365 days</td><td class="num">4.00</td></tr>
+<tr><td class="">Over 365 days</td><td class="num">0.00</td></tr>
+<tr><td class="">Total</td><td class="num">22.00</td></tr>
+</tbody></table>
+<h2>Payables aging</h2>
+<table><thead><tr><th class="">Bucket (days past due) (₹ in lakhs)</th><th class="num">Outstanding</th></tr></thead><tbody>
+<tr><td class="">Not due</td><td class="num">5.00</td></tr>
+<tr><td class="">1–30 days</td><td class="num">7.00</td></tr>
+<tr><td class="">31–60 days</td><td class="num">0.00</td></tr>
+<tr><td class="">61–90 days</td><td class="num">3.00</td></tr>
+<tr><td class="">91–180 days</td><td class="num">0.00</td></tr>
+<tr><td class="">181–365 days</td><td class="num">0.00</td></tr>
+<tr><td class="">Over 365 days</td><td class="num">0.00</td></tr>
+<tr><td class="">Total</td><td class="num">15.00</td></tr>
+</tbody></table>
+<h2>Top customers (sales register, excl. GST)</h2>
+<table><thead><tr><th class="">Item (₹ in lakhs)</th><th class="num">Value</th></tr></thead><tbody>
+<tr><td class="">Sunrise Retail (C001)</td><td class="num">42.00</td></tr>
+<tr><td class="">Metro Wholesale (C002)</td><td class="num">30.00</td></tr>
+<tr><td class="">Lakeview Stores (C003)</td><td class="num">20.00</td></tr>
+<tr><td class="">Hilltop Mart (C004)</td><td class="num">16.00</td></tr>
+<tr><td class="">Coastal Traders (C005)</td><td class="num">12.00</td></tr>
+</tbody></table>
+<h2>Top products (sales register, excl. GST)</h2>
+<table><thead><tr><th class="">Item (₹ in lakhs)</th><th class="num">Value</th></tr></thead><tbody>
+<tr><td class="">SKU-A</td><td class="num">54.00</td></tr>
+<tr><td class="">SKU-B</td><td class="num">40.00</td></tr>
+<tr><td class="">SKU-C</td><td class="num">26.00</td></tr>
+</tbody></table>
+<h2>Revenue by channel (sales register, excl. GST)</h2>
+<table><thead><tr><th class="">Item (₹ in lakhs)</th><th class="num">Value</th></tr></thead><tbody>
+<tr><td class="">direct_b2b</td><td class="num">90.00</td></tr>
+<tr><td class="">marketplace_a</td><td class="num">30.00</td></tr>
+</tbody></table>
+<table><thead><tr><th class="">Concentration</th><th class="num">Value</th></tr></thead><tbody>
+<tr><td class="">Top customer share</td><td class="num">35.0%</td></tr>
+<tr><td class="">Top 5 share</td><td class="num">100.0%</td></tr>
+<tr><td class="">Top 10 share</td><td class="num">100.0%</td></tr>
+<tr><td class="">HHI (0–10,000)</td><td class="num">2406</td></tr>
+</tbody></table>
+<h2>Budget vs actual</h2>
+<table><thead><tr><th class="">Line (₹ in lakhs)</th><th class="num">Actual</th><th class="num">Budget</th><th class="num">Variance</th><th class="num">Variance %</th><th class="">Assessment</th><th class="">Basis</th></tr></thead><tbody>
+<tr><td class="">Advertising</td><td class="num">2.00</td><td class="num">2.50</td><td class="num">(0.50)</td><td class="num">-20.0%</td><td class="">favourable</td><td class="">actual = ledger(advertising); budget basis tax_exclusive</td></tr>
+<tr><td class="">Employee benefits expense</td><td class="num">15.00</td><td class="num">14.00</td><td class="num">1.00</td><td class="num">7.1%</td><td class="">unfavourable</td><td class="">actual = ledger(employee_benefits_expense); budget basis tax_exclusive</td></tr>
+<tr><td class="">Marketplace fees</td><td class="num">4.00</td><td class="num">3.50</td><td class="num">0.50</td><td class="num">14.3%</td><td class="">unfavourable</td><td class="">actual = ledger(marketplace_fees); budget basis tax_exclusive</td></tr>
+<tr><td class="">Rent</td><td class="num">3.00</td><td class="num">3.00</td><td class="num">0.00</td><td class="num">0.0%</td><td class="">neutral</td><td class="">actual = ledger(rent); budget basis tax_exclusive</td></tr>
+<tr><td class="">Revenue (net, as in P&amp;L)</td><td class="num">118.00</td><td class="num">125.00</td><td class="num">(7.00)</td><td class="num">-5.6%</td><td class="">unfavourable</td><td class="">actual = net_revenue; budget basis net_revenue</td></tr>
+</tbody></table>
+<h2>Settlements to bank</h2>
+<table><thead><tr><th class="">Settlement</th><th class="">Provider</th><th class="">Status</th><th class="">Basis</th></tr></thead><tbody>
+<tr><td class="">MA-SET-0001</td><td class="">marketplace_a</td><td class="">confirmed match</td><td class="">bank reference (UTR) equals settlement bank_reference</td></tr>
+<tr><td class="">GX-SET-0002</td><td class="">gateway_x</td><td class="">probable match</td><td class="">exact net amount; bank date within 5 days; provider name in narration</td></tr>
+<tr><td class="">MA-SET-0003</td><td class="">marketplace_a</td><td class="">unmatched</td><td class="">—</td></tr>
+</tbody></table>
+<ul>
+<li>Settlement variance (expected net not located or short): ₹2.46 lakh ⚠</li>
+<li>Fees in settlements this period: ₹1.00 lakh</li>
+</ul>
+<h2>Source conflicts</h2>
+<ul>
+<li><strong>gross revenue for the current period</strong> — sales_lines.csv (sales register): ₹1.20 crore; trial_balance.csv (revenue_from_operations): ₹1.20 crore. Difference ₹0.00; status resolved. Used: trial_balance.csv (posted ledger; source_of_truth.policies.revenue_accrual).</li>
+<li><strong>cash and bank balance at 2025-09-30</strong> — bank_transactions.csv (statement balances): ₹12.80 lakh; trial_balance.csv (cash_and_cash_equivalents, book): ₹13.00 lakh. Difference -₹20,000.00; status explained_pending_brs. Used: bank statement (source_of_truth.policies.bank_balances).</li>
+</ul>
+<h2>Proactive insights (Reflex Engine)</h2>
+<p>Ran automatically after the analysis, inside this task only (no background monitoring). Rules evaluated: 11; triggers found: 12; investigated: 10; suppressed: 0; deferred: 1; approvals pending: 3. Everything below was computed read-only from the data provided; nothing was sent, uploaded, paid or posted.</p>
+<h3>Triggered findings</h3>
+<table><thead><tr><th class="">#</th><th class="">Finding</th><th class="">Rule(s)</th><th class="">Severity</th><th class="">Confidence</th></tr></thead><tbody>
+<tr><td class="">1</td><td class="">Receivables more than 90 days past due</td><td class="">rx_overdue_receivables</td><td class="">high</td><td class="">0.90</td></tr>
+<tr><td class="">2</td><td class="">High dependence on Sunrise Retail</td><td class="">rx_customer_concentration</td><td class="">medium</td><td class="">0.90</td></tr>
+<tr><td class="">3</td><td class="">Revenue from operations is unfavourable to budget</td><td class="">rx_budget_overrun</td><td class="">medium</td><td class="">0.90</td></tr>
+<tr><td class="">4</td><td class="">MSME supplier bills outstanding beyond 45 days</td><td class="">rx_msme_payables_timing</td><td class="">medium</td><td class="">0.90</td></tr>
+<tr><td class="">5</td><td class="">Marketplace fees grew faster than revenue; Marketplace fees is unfavourable to budget</td><td class="">rx_cost_category_spike, rx_budget_overrun</td><td class="">medium</td><td class="">0.90</td></tr>
+<tr><td class="">6</td><td class="">Employee benefits expense is unfavourable to budget</td><td class="">rx_budget_overrun</td><td class="">medium</td><td class="">0.90</td></tr>
+<tr><td class="">7</td><td class="">Bank and book balances differ at period end</td><td class="">rx_bank_book_difference</td><td class="">medium</td><td class="">0.90</td></tr>
+<tr><td class="">8</td><td class="">Settlement MA-SET-0003 not yet in bank data (within the 5-day timing window)</td><td class="">rx_settlement_shortfall</td><td class="">low</td><td class="">0.60</td></tr>
+<tr><td class="">9</td><td class="">Advertising grew faster than revenue</td><td class="">rx_cost_category_spike</td><td class="">low</td><td class="">0.90</td></tr>
+<tr><td class="">10</td><td class="">DPO uses COGS because credit purchases are not available</td><td class="">rx_partial_metric_upgrade</td><td class="">low</td><td class="">0.90</td></tr>
+</tbody></table>
+<p>Insights from these investigations appear under Findings by evidence class.</p>
+<h3>Scenarios (deterministic what-ifs)</h3>
+<table><thead><tr><th class="">Scenario</th><th class="num">Result</th><th class="">Formula / assumption</th></tr></thead><tbody>
+<tr><td class="">scn_collect_overdue_cash</td><td class="num">₹19.80 lakh</td><td class="">Overdue receivables collected in full; nothing else changes.</td></tr>
+<tr><td class="">scn_collect_overdue_dso</td><td class="num">21 days</td><td class="">((opening AR + closing AR - overdue) / 2) / credit_sales * days</td></tr>
+<tr><td class="">scn_collect_overdue_dso_change</td><td class="num">-5 days</td><td class="">scn_collect_overdue_dso - dso</td></tr>
+<tr><td class="">scn_dso_reduction_cash_release [dso_reduction_days=10]</td><td class="num">₹7.74 lakh</td><td class="">dso_reduction_days * credit_sales_incl_tax / days(period)</td></tr>
+<tr><td class="">scn_msme_clearance_cash_after</td><td class="num">₹9.80 lakh</td><td class="">All flagged MSME bills paid now.</td></tr>
+<tr><td class="">scn_cost_normalisation_saving [account_class=marketplace_fees]</td><td class="num">₹42,424.24</td><td class="">Indicative gap between actual growth and revenue-proportional growth; not evidence that any reduction is achievable.</td></tr>
+<tr><td class="">scn_settlement_recovery_cash</td><td class="num">₹15.26 lakh</td><td class="">All unlocated settlements are received.</td></tr>
+<tr><td class="">scn_cost_normalisation_saving [account_class=advertising]</td><td class="num">₹21,212.12</td><td class="">Indicative gap between actual growth and revenue-proportional growth; not evidence that any reduction is achievable.</td></tr>
+</tbody></table>
+<h3>Prioritised actions (auto-generated)</h3>
+<table><thead><tr><th class="">Rank</th><th class="">Action</th><th class="">Expected impact</th><th class="">Impact</th><th class="">Confidence</th><th class="">Effort</th><th class="num">Priority</th><th class="">Approval</th></tr></thead><tbody>
+<tr><td class="">1</td><td class="">Collect receivables more than 90 days past due, starting with Coastal Traders</td><td class="">Up to ₹7.00 lakh of cash if collected in full (upper bound).</td><td class="">high</td><td class="">high</td><td class="">low</td><td class="num">3.00</td><td class="">APR-7fe2ac34a2dc (pending approval)</td></tr>
+<tr><td class="">2</td><td class="">Review and schedule payment of MSME supplier bills beyond 45 days — review with your CA</td><td class="">Exposure ₹3.00 lakh.</td><td class="">high</td><td class="">high</td><td class="">low</td><td class="num">3.00</td><td class="">APR-62d4db6079f2 (pending approval)</td></tr>
+<tr><td class="">3</td><td class="">Confirm receipt of settlement MA-SET-0003 or raise a query with marketplace_a</td><td class="">Up to ₹2.46 lakh of cash if it is still outstanding (upper bound).</td><td class="">high</td><td class="">medium</td><td class="">low</td><td class="num">2.10</td><td class="">APR-004652098706 (pending approval)</td></tr>
+<tr><td class="">4</td><td class="">Close the revenue gap to budget</td><td class="">₹7.00 lakh against plan (measured).</td><td class="">high</td><td class="">high</td><td class="">medium</td><td class="num">1.50</td><td class="">not needed</td></tr>
+<tr><td class="">5</td><td class="">Review credit terms and dependence on Sunrise Retail</td><td class="">Exposure in open receivables ₹6.00 lakh.</td><td class="">high</td><td class="">high</td><td class="">high</td><td class="num">1.00</td><td class="">not needed</td></tr>
+<tr><td class="">6</td><td class="">Bring employee benefits expense back within budget</td><td class="">₹1.00 lakh against plan (measured).</td><td class="">medium</td><td class="">high</td><td class="">medium</td><td class="num">1.00</td><td class="">not needed</td></tr>
+<tr><td class="">7</td><td class="">Bring marketplace fees back within budget</td><td class="">₹50,000.00 against plan (measured).</td><td class="">medium</td><td class="">high</td><td class="">medium</td><td class="num">1.00</td><td class="">not needed</td></tr>
+<tr><td class="">8</td><td class="">Prepare the period-end bank reconciliation statement</td><td class="">Confirms the cash figure used in this report.</td><td class="">low</td><td class="">high</td><td class="">low</td><td class="num">1.00</td><td class="">not needed</td></tr>
+<tr><td class="">9</td><td class="">Review marketplace fees spend and contracts</td><td class="">Indicative gap ₹42,424.24 above revenue-proportional growth; confirm with vendor or contract evidence before treating any amount as recoverable.</td><td class="">low</td><td class="">high</td><td class="">medium</td><td class="num">0.50</td><td class="">not needed</td></tr>
+<tr><td class="">10</td><td class="">Review advertising spend and contracts</td><td class="">Indicative gap ₹21,212.12 above revenue-proportional growth; confirm with vendor or contract evidence before treating any amount as recoverable.</td><td class="">low</td><td class="">high</td><td class="">medium</td><td class="num">0.50</td><td class="">not needed</td></tr>
+</tbody></table>
+<h3>Charts</h3>
+<figure><svg xmlns="http://www.w3.org/2000/svg" width="760" height="400" viewBox="0 0 760 400" role="img" aria-labelledby="t d" font-family="Helvetica, Arial, sans-serif"><title id="t">Receivables by days past due</title><desc id="d">Stacked bar of open receivables by aging bucket.</desc><rect width="760" height="400" fill="#FFFFFF"/><text x="20" y="30" font-size="19" font-weight="bold" fill="#222222">Receivables by days past due</text><text x="20" y="51" font-size="13" fill="#8C8C8C">Open receivables at 2025-09-30</text><rect x="40.0" y="90" width="185.5" height="44" fill="#9ECAE1"/><rect x="225.5" y="90" width="154.5" height="44" fill="#6BAED6"/><rect x="380.0" y="90" width="123.6" height="44" fill="#FDAE6B"/><rect x="503.6" y="90" width="92.7" height="44" fill="#F16913"/><rect x="596.4" y="90" width="123.6" height="44" fill="#D94801"/><rect x="40" y="164" width="14" height="14" fill="#9ECAE1"/><text x="62" y="175" font-size="14" fill="#222222">Not due: <tspan font-weight="bold">₹6.00 lakh</tspan></text><rect x="380" y="164" width="14" height="14" fill="#6BAED6"/><text x="402" y="175" font-size="14" fill="#222222">1–30 days: <tspan font-weight="bold">₹5.00 lakh</tspan></text><rect x="40" y="194" width="14" height="14" fill="#FDD0A2"/><text x="62" y="205" font-size="14" fill="#222222">31–60 days: <tspan font-weight="bold">₹0</tspan></text><rect x="380" y="194" width="14" height="14" fill="#FDAE6B"/><text x="402" y="205" font-size="14" fill="#222222">61–90 days: <tspan font-weight="bold">₹4.00 lakh</tspan></text><rect x="40" y="224" width="14" height="14" fill="#F16913"/><text x="62" y="235" font-size="14" fill="#222222">91–180 days: <tspan font-weight="bold">₹3.00 lakh</tspan></text><rect x="380" y="224" width="14" height="14" fill="#D94801"/><text x="402" y="235" font-size="14" fill="#222222">181–365 days: <tspan font-weight="bold">₹4.00 lakh</tspan></text><rect x="40" y="254" width="14" height="14" fill="#8C2D04"/><text x="62" y="265" font-size="14" fill="#222222">Over 365 days: <tspan font-weight="bold">₹0</tspan></text><text x="20" y="386" font-size="10" fill="#8C8C8C">Source: calculation register, run period H1 FY2025-26; values bound to calc_ids.</text></svg><figcaption>Receivables by days past due</figcaption></figure>
+<p>Data: Not due ₹6.00 lakh; 1–30 days ₹5.00 lakh; 31–60 days ₹0.00; 61–90 days ₹4.00 lakh; 91–180 days ₹3.00 lakh; 181–365 days ₹4.00 lakh; Over 365 days ₹0.00</p>
+<figure><svg xmlns="http://www.w3.org/2000/svg" width="760" height="400" viewBox="0 0 760 400" role="img" aria-labelledby="t d" font-family="Helvetica, Arial, sans-serif"><title id="t">Customer concentration</title><desc id="d">Pareto chart of customer revenue shares.</desc><rect width="760" height="400" fill="#FFFFFF"/><text x="20" y="30" font-size="19" font-weight="bold" fill="#222222">Customer concentration</text><text x="20" y="51" font-size="13" fill="#8C8C8C">Share of sales register value by customer with cumulative line</text><rect x="85.6" y="80.0" width="76.8" height="250.0" fill="#2F6DB5"/><text x="124.0" y="74.0" font-size="11" text-anchor="middle" fill="#222222">35.0%</text><text x="124.0" y="358" font-size="11" text-anchor="middle" fill="#222222">C001</text><rect x="213.6" y="151.4" width="76.8" height="178.6" fill="#2F6DB5"/><text x="252.0" y="145.4" font-size="11" text-anchor="middle" fill="#222222">25.0%</text><text x="252.0" y="358" font-size="11" text-anchor="middle" fill="#222222">C002</text><rect x="341.6" y="211.0" width="76.8" height="119.0" fill="#2F6DB5"/><text x="380.0" y="205.0" font-size="11" text-anchor="middle" fill="#222222">16.7%</text><text x="380.0" y="358" font-size="11" text-anchor="middle" fill="#222222">C003</text><rect x="469.6" y="234.8" width="76.8" height="95.2" fill="#2F6DB5"/><text x="508.0" y="228.8" font-size="11" text-anchor="middle" fill="#222222">13.3%</text><text x="508.0" y="358" font-size="11" text-anchor="middle" fill="#222222">C004</text><rect x="597.6" y="258.6" width="76.8" height="71.4" fill="#2F6DB5"/><text x="636.0" y="252.6" font-size="11" text-anchor="middle" fill="#222222">10.0%</text><text x="636.0" y="358" font-size="11" text-anchor="middle" fill="#222222">C005</text><polyline fill="none" stroke="#E8890C" stroke-width="2" points="124.0,242.5 252.0,180.0 380.0,138.3 508.0,105.0 636.0,80.0"/><text x="720" y="70" font-size="11" text-anchor="end" fill="#E8890C">cumulative share</text><text x="20" y="386" font-size="10" fill="#8C8C8C">Source: calculation register, run period H1 FY2025-26; values bound to calc_ids.</text></svg><figcaption>Customer concentration</figcaption></figure>
+<p>Data: C001 35.0%; C002 25.0%; C003 16.7%; C004 13.3%; C005 10.0%</p>
+<figure><svg xmlns="http://www.w3.org/2000/svg" width="760" height="320" viewBox="0 0 760 320" role="img" aria-labelledby="t d" font-family="Helvetica, Arial, sans-serif"><title id="t">Budget variance by line</title><desc id="d">Diverging bars of budget variances.</desc><rect width="760" height="320" fill="#FFFFFF"/><text x="20" y="30" font-size="19" font-weight="bold" fill="#222222">Budget variance by line</text><text x="20" y="51" font-size="13" fill="#8C8C8C">Actual minus budget (orange = unfavourable)</text><line x1="445.0" y1="64" x2="445.0" y2="264" stroke="#8C8C8C"/><text x="162" y="89.0" font-size="13" text-anchor="end" fill="#222222"><tspan x="162" dy="0">Advertising</tspan></text><rect x="431.4" y="70.0" width="13.6" height="30.0" fill="#2F6DB5"/><text x="425.4" y="89.0" font-size="13" font-weight="bold" text-anchor="end" fill="#222222">-₹50,000</text><text x="162" y="120.0" font-size="13" text-anchor="end" fill="#222222"><tspan x="162" dy="0">Employee benefits</tspan><tspan x="162" dy="14">expense</tspan></text><rect x="445.0" y="108.0" width="27.1" height="30.0" fill="#E8890C"/><text x="478.1" y="127.0" font-size="13" font-weight="bold" text-anchor="start" fill="#222222">₹1.00 lakh</text><text x="162" y="165.0" font-size="13" text-anchor="end" fill="#222222"><tspan x="162" dy="0">Marketplace fees</tspan></text><rect x="445.0" y="146.0" width="13.6" height="30.0" fill="#E8890C"/><text x="464.6" y="165.0" font-size="13" font-weight="bold" text-anchor="start" fill="#222222">₹50,000</text><text x="162" y="203.0" font-size="13" text-anchor="end" fill="#222222"><tspan x="162" dy="0">Rent</tspan></text><rect x="445.0" y="184.0" width="1.0" height="30.0" fill="#2F6DB5"/><text x="451.0" y="203.0" font-size="13" font-weight="bold" text-anchor="start" fill="#222222">₹0</text><text x="162" y="234.0" font-size="13" text-anchor="end" fill="#222222"><tspan x="162" dy="0">Revenue from</tspan><tspan x="162" dy="14">operations</tspan></text><rect x="255.0" y="222.0" width="190.0" height="30.0" fill="#E8890C"/><text x="249.0" y="241.0" font-size="13" font-weight="bold" text-anchor="end" fill="#222222">-₹7.00 lakh</text><text x="20" y="306" font-size="10" fill="#8C8C8C">Source: calculation register, run period H1 FY2025-26; values bound to calc_ids.</text></svg><figcaption>Budget variance by line</figcaption></figure>
+<p>Data: Advertising -₹50,000.00; Employee benefits expense ₹1.00 lakh; Marketplace fees ₹50,000.00; Rent ₹0.00; Revenue from operations -₹7.00 lakh</p>
+<figure><svg xmlns="http://www.w3.org/2000/svg" width="760" height="400" viewBox="0 0 760 400" role="img" aria-labelledby="t d" font-family="Helvetica, Arial, sans-serif"><title id="t">Settlements: gross to expected net</title><desc id="d">Waterfall from gross settlement value to expected net; GST on fees and TCS/TDS are recoverable credits.</desc><rect width="760" height="400" fill="#FFFFFF"/><text x="20" y="30" font-size="19" font-weight="bold" fill="#222222">Settlements: gross to expected net</text><text x="20" y="51" font-size="13" fill="#8C8C8C">Grey-blue steps are recoverable tax credits or reversals, not losses</text><line x1="40" y1="320.0" x2="720" y2="320.0" stroke="#8C8C8C"/><rect x="58.5" y="110.0" width="60.2" height="210.0" fill="#8C8C8C"/><text x="88.6" y="104.0" font-size="12" font-weight="bold" text-anchor="middle" fill="#222222">₹10.00 lakh</text><text x="88.6" y="356" font-size="11.5" text-anchor="middle" fill="#222222"><tspan x="88.6" dy="0">Gross</tspan></text><rect x="155.6" y="110.0" width="60.2" height="21.0" fill="#E8890C"/><text x="185.7" y="86.0" font-size="12" font-weight="bold" text-anchor="middle" fill="#222222">-₹1.00 lakh</text><text x="185.7" y="356" font-size="11.5" text-anchor="middle" fill="#222222"><tspan x="185.7" dy="0">Fees (cost)</tspan></text><rect x="252.7" y="131.0" width="60.2" height="3.8" fill="#7A8CA3"/><text x="282.9" y="125.0" font-size="12" font-weight="bold" text-anchor="middle" fill="#222222">-₹18,000</text><text x="282.9" y="356" font-size="11.5" text-anchor="middle" fill="#222222"><tspan x="282.9" dy="0">GST on fees</tspan><tspan x="282.9" dy="13">(credit)</tspan></text><rect x="349.9" y="134.8" width="60.2" height="6.3" fill="#7A8CA3"/><text x="380.0" y="110.8" font-size="12" font-weight="bold" text-anchor="middle" fill="#222222">-₹30,000</text><text x="380.0" y="356" font-size="11.5" text-anchor="middle" fill="#222222"><tspan x="380.0" dy="0">Refunds</tspan><tspan x="380.0" dy="13">(reversal)</tspan></text><rect x="447.0" y="141.1" width="60.2" height="1.0" fill="#7A8CA3"/><text x="477.1" y="135.1" font-size="12" font-weight="bold" text-anchor="middle" fill="#222222">-₹4,000</text><text x="477.1" y="356" font-size="11.5" text-anchor="middle" fill="#222222"><tspan x="477.1" dy="0">TCS/TDS (tax</tspan><tspan x="477.1" dy="13">credit)</tspan></text><rect x="544.2" y="141.9" width="60.2" height="1.0" fill="#2F6DB5"/><text x="574.3" y="117.9" font-size="12" font-weight="bold" text-anchor="middle" fill="#222222">₹0</text><text x="574.3" y="356" font-size="11.5" text-anchor="middle" fill="#222222"><tspan x="574.3" dy="0">Adjustments</tspan></text><rect x="641.3" y="141.9" width="60.2" height="178.1" fill="#8C8C8C"/><text x="671.4" y="135.9" font-size="12" font-weight="bold" text-anchor="middle" fill="#222222">₹8.48 lakh</text><text x="671.4" y="356" font-size="11.5" text-anchor="middle" fill="#222222"><tspan x="671.4" dy="0">Expected net</tspan></text><text x="20" y="386" font-size="10" fill="#8C8C8C">Source: calculation register, run period H1 FY2025-26; values bound to calc_ids.</text></svg><figcaption>Settlements: gross to expected net</figcaption></figure>
+<p>Data: Gross ₹10.00 lakh; Fees (cost) ₹1.00 lakh; GST on fees (credit) ₹18,000.00; Refunds (reversal) ₹30,000.00; TCS/TDS (tax credit) ₹4,000.00; Adjustments ₹0.00; Expected net ₹8.48 lakh</p>
+<figure><svg xmlns="http://www.w3.org/2000/svg" width="760" height="206" viewBox="0 0 760 206" role="img" aria-labelledby="t d" font-family="Helvetica, Arial, sans-serif"><title id="t">Cost growth above revenue growth</title><desc id="d">Diverging bars of cost growth gaps.</desc><rect width="760" height="206" fill="#FFFFFF"/><text x="20" y="30" font-size="19" font-weight="bold" fill="#222222">Cost growth above revenue growth</text><text x="20" y="51" font-size="13" fill="#8C8C8C">Category growth minus revenue growth (percentage points)</text><line x1="445.0" y1="64" x2="445.0" y2="150" stroke="#8C8C8C"/><text x="162" y="89.0" font-size="13" text-anchor="end" fill="#222222"><tspan x="162" dy="0">Marketplace fees</tspan></text><rect x="445.0" y="70.0" width="26.9" height="30.0" fill="#E8890C"/><text x="477.9" y="89.0" font-size="13" font-weight="bold" text-anchor="start" fill="#222222">14.1%</text><text x="162" y="127.0" font-size="13" text-anchor="end" fill="#222222"><tspan x="162" dy="0">Advertising</tspan></text><rect x="445.0" y="108.0" width="26.9" height="30.0" fill="#E8890C"/><text x="477.9" y="127.0" font-size="13" font-weight="bold" text-anchor="start" fill="#222222">14.1%</text><text x="20" y="192" font-size="10" fill="#8C8C8C">Source: calculation register, run period H1 FY2025-26; values bound to calc_ids.</text></svg><figcaption>Cost growth above revenue growth</figcaption></figure>
+<p>Data: Marketplace fees 14.1%; Advertising 14.1%</p>
+<h3>Additional data requested (read-only)</h3>
+<ul>
+<li>REQ-7ca894904c1e (requested): supplier_bills by vendor from accounting system (vendor bills) → vendor-level drill-down (analysed by the agent; not a canonical file in v0.1). Identify which vendors or contracts drove the increase in marketplace fees.</li>
+<li>REQ-f860afb809d6 (requested): bank ledger lines (book side) from accounting system (bank ledger) → journal_lines.csv (bank account lines) — used by the agent to prepare a BRS outside the verified report. Identify uncleared cheques, deposits in transit or unrecorded bank charges (toolkit v0.1 does not implement rec_accounting_to_bank).</li>
+<li>REQ-ebb9e15ae43e (requested): bank_transactions from bank statement or authorised bank connector → bank_transactions.csv (append lines after the period end). Check whether settlement MA-SET-0003 arrived after the period end (timing) or is missing.</li>
+<li>REQ-50d29720adb5 (requested): supplier_bills by vendor from accounting system (vendor bills) → vendor-level drill-down (analysed by the agent; not a canonical file in v0.1). Identify which vendors or contracts drove the increase in advertising.</li>
+<li>REQ-d4c861b987ce (requested): credit purchases including GST from accounting system (purchase register) → run_config.json: credit_purchases_incl_tax. Makes DPO and the cash conversion cycle ready instead of partial.</li>
+</ul>
+<h3>Approvals needed before any external or financial action</h3>
+<ul>
+<li>APR-7fe2ac34a2dc (external action, pending approval): Draft payment reminder emails to customers with invoices more than 90 days past due. On approval: The plugin prepares draft reminders in prepared/; nothing is sent until you send it or approve sending separately.</li>
+<li>APR-62d4db6079f2 (financial write, pending approval): Prepare a payment proposal for MSME bills beyond the statutory period. On approval: The plugin prepares prepared/msme_payment_proposal.csv. It never makes payments; you execute any payment in your own bank.</li>
+<li>APR-004652098706 (external action, pending approval): Draft a query to marketplace_a about settlement MA-SET-0003. On approval: The plugin prepares a draft query in prepared/; you send it.</li>
+</ul>
+<h3>Suppressed and deferred</h3>
+<ul>
+<li>Deferred: data_gap:probable_settlement_matches — rx_partial_metric_upgrade (limit_reached:max_triggers)</li>
+</ul>
+<h2>Data quality and accounting integrity</h2>
+<p>Issues by severity: high 1, medium 3, informational 1.</p>
+<table><thead><tr><th class="">Issue</th><th class="">Check</th><th class="">Severity</th><th class="">Description</th></tr></thead><tbody>
+<tr><td class="">ISS-0001</td><td class="">dq_date_gaps</td><td class="">medium</td><td class="">Account XXXX1234: 7 gap(s) longer than 10 days without statement lines - confirm no statement pages are missing.</td></tr>
+<tr><td class="">ISS-0002</td><td class="">ai_msme_payables_timing</td><td class="">medium</td><td class="">1 bill(s) from suppliers classified micro/small are outstanding more than 45 days after bill date. Flag for professional review of payment-timing implications; applicability depends on supplier registration, activity and agreed terms.</td></tr>
+<tr><td class="">ISS-0003</td><td class="">ai_msme_payables_timing</td><td class="">informational</td><td class="">1 open bill(s) have no MSME classification; MSME timing could not be assessed for them.</td></tr>
+<tr><td class="">ISS-0004</td><td class="">ai_settlement_reconciliation</td><td class="">high</td><td class="">1 settlement(s) not found in bank credits and 0 conflicting; expected net value not located in the bank data provided: ₹2.46 lakh.</td></tr>
+<tr><td class="">ISS-0005</td><td class="">ai_cash_movement</td><td class="">medium</td><td class="">cash and bank balance at 2025-09-30: sources differ by -₹20,000.00 (timing_or_unrecorded_items_requires_brs). Both figures are shown; bank statement (source_of_truth.policies.bank_balances) is used.</td></tr>
+</tbody></table>
+<h2>Limitations — what could not be fully analysed</h2>
+<ul>
+<li>Days payables outstanding (<code>dpo</code>, H1 FY2025-26): <strong>partial</strong> — Alternative input: COGS used as denominator (payables include GST and non-inventory purchases); provide credit purchases including GST for a ready DPO.</li>
+<li>Cash conversion cycle (<code>cash_conversion_cycle</code>, H1 FY2025-26): <strong>partial</strong> — Inherits DSO/DPO limitations.</li>
+<li>Settlement variance (<code>settlement_variance</code>, H1 FY2025-26): <strong>partial</strong> — Unmatched settlements may be in transit or missing; a non-zero variance is a lead for review, not proof of platform error.; Includes probable (not confirmed) matches.</li>
+</ul>
+<h2>Scope, sources and method</h2>
+<ul>
+<li><code>ap_open_items.csv</code> (ap_open_items): 4 rows, coverage 2025-07-01 to 2025-10-15, SHA-256 9accdd8195ad…</li>
+<li><code>ar_open_items.csv</code> (ar_open_items): 5 rows, coverage 2024-11-15 to 2025-10-05, SHA-256 ddd3361ce86b…</li>
+<li><code>bank_transactions.csv</code> (bank_transactions): 17 rows, coverage 2025-04-05 to 2025-09-29, SHA-256 a49af03261e0…</li>
+<li><code>budget.csv</code> (budget): 5 rows, coverage — to —, SHA-256 aeb97c8da318…</li>
+<li><code>journal_lines.csv</code> (journal_lines): 4 rows, coverage 2025-09-30 to 2025-09-30, SHA-256 0881e628f7c8…</li>
+<li><code>sales_lines.csv</code> (sales_lines): 11 rows, coverage 2025-04-02 to 2025-09-12, SHA-256 6376324e2d88…</li>
+<li><code>settlements.csv</code> (settlements): 3 rows, coverage 2025-06-14 to 2025-09-25, SHA-256 f4e5dd11ba87…</li>
+<li><code>trial_balance.csv</code> (trial_balance): 48 rows, coverage 2024-04-01 to 2025-09-30, SHA-256 062a51f55731…</li>
+</ul>
+<ul>
+<li>Formulas: finance-analyst.yaml metrics.registry, formula_version 1.0; spec version 1.3.0; toolkit 0.3.0.</li>
+<li>Amounts exclude GST unless stated. Tables state their scale. ⚠ marks a partial figure; see Limitations.</li>
+<li>Materiality for highlighting movements: two of (≥ ₹25,000; ≥ 10% of base; ≥ 0.5% of net revenue) unless configured otherwise.</li>
+</ul>
+<h2>Appendix — definitions used in this report</h2>
+<table><thead><tr><th class="">Metric</th><th class="">Definition (formula)</th><th class="">Basis</th></tr></thead><tbody>
+<tr><td class="">Gross revenue (<code>gross_revenue</code>)</td><td class="">ledger(revenue_from_operations, period)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Sales returns &amp; allowances (<code>sales_returns_and_allowances</code>)</td><td class="">ledger(sales_returns_and_allowances, period)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Net revenue (<code>net_revenue</code>)</td><td class="">gross_revenue + ledger(other_operating_revenue) - sales_returns_and_allowances</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Cost of goods sold (<code>cogs</code>)</td><td class="">ledger(cost_of_revenue classes, period)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Gross profit (<code>gross_profit</code>)</td><td class="">net_revenue - cogs</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Gross margin (<code>gross_margin</code>)</td><td class="">gross_profit / net_revenue</td><td class="">accrual</td></tr>
+<tr><td class="">Operating expenses (excl. D&amp;A) (<code>operating_expenses</code>)</td><td class="">ledger(operating expense classes, period)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">EBITDA (<code>ebitda</code>)</td><td class="">gross_profit - operating_expenses</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">EBITDA margin (<code>ebitda_margin</code>)</td><td class="">ebitda / net_revenue</td><td class="">accrual</td></tr>
+<tr><td class="">Operating profit (<code>operating_profit</code>)</td><td class="">ebitda - ledger(depreciation_and_amortisation)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Operating margin (<code>operating_margin</code>)</td><td class="">operating_profit / net_revenue</td><td class="">accrual</td></tr>
+<tr><td class="">Profit before tax (<code>profit_before_tax</code>)</td><td class="">operating_profit + other_income - finance_costs - (exceptional + prior_period + fx)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Profit after tax (net profit) (<code>net_profit</code>)</td><td class="">profit_before_tax - tax expense</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Net margin (after tax) (<code>net_margin</code>)</td><td class="">net_profit / net_revenue</td><td class="">accrual</td></tr>
+<tr><td class="">Effective tax rate (books) (<code>effective_tax_rate</code>)</td><td class="">tax expense / profit_before_tax</td><td class="">accrual</td></tr>
+<tr><td class="">Cost-to-revenue ratio (<code>cost_to_revenue_ratio</code>)</td><td class="">(cogs + operating_expenses) / net_revenue</td><td class="">accrual</td></tr>
+<tr><td class="">Expenses by category (<code>expense_by_category</code>)</td><td class="">group_by(ledger(expense classes), class)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Revenue growth (<code>revenue_growth</code>)</td><td class="">(net_revenue[P] - net_revenue[C]) / abs(net_revenue[C])</td><td class="">accrual</td></tr>
+<tr><td class="">Operating expense growth (<code>expense_growth</code>)</td><td class="">(operating_expenses[P] - operating_expenses[C]) / abs(operating_expenses[C])</td><td class="">accrual</td></tr>
+<tr><td class="">Change vs comparison (<code>period_over_period_variance</code>)</td><td class="">gross_revenue[P] - gross_revenue[C]</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Cost category variance (<code>cost_category_variance</code>)</td><td class="">actual_k[P] - actual_k[C]</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Trade receivables (<code>accounts_receivable</code>)</td><td class="">balance(trade_receivables, as_of)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Trade payables (<code>accounts_payable</code>)</td><td class="">balance(trade payable classes, as_of)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Inventory (<code>inventory_value</code>)</td><td class="">balance(inventories, as_of)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Working capital (<code>working_capital</code>)</td><td class="">balance(current_assets) - balance(current_liabilities)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Current ratio (<code>current_ratio</code>)</td><td class="">current_assets / current_liabilities</td><td class="">accrual</td></tr>
+<tr><td class="">Quick ratio (<code>quick_ratio</code>)</td><td class="">(current_assets - inventories - prepaid_expenses) / current_liabilities</td><td class="">accrual</td></tr>
+<tr><td class="">Outstanding borrowings (<code>outstanding_debt</code>)</td><td class="">balance(borrowing classes, as_of)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Finance costs (<code>finance_costs</code>)</td><td class="">ledger(finance_costs, period)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Interest coverage (<code>interest_coverage_ratio</code>)</td><td class="">operating_profit / finance_costs</td><td class="">accrual</td></tr>
+<tr><td class="">Debt-to-equity (<code>debt_to_equity</code>)</td><td class="">outstanding_debt / (equity + unappropriated current profit)</td><td class="">accrual</td></tr>
+<tr><td class="">Inventory turnover (<code>inventory_turnover</code>)</td><td class="">cogs / avg_balance(inventories)</td><td class="">accrual</td></tr>
+<tr><td class="">Days inventory outstanding (<code>dio</code>)</td><td class="">avg_balance(inventories) / cogs * days(period)</td><td class="">accrual</td></tr>
+<tr><td class="">Days sales outstanding (<code>dso</code>)</td><td class="">avg_balance(trade_receivables) / credit_sales_incl_tax * days(period)</td><td class="">accrual</td></tr>
+<tr><td class="">Days payables outstanding (<code>dpo</code>)</td><td class="">avg_balance(trade_payables) / credit_purchases_incl_tax * days(period)</td><td class="">accrual</td></tr>
+<tr><td class="">Cash conversion cycle (<code>cash_conversion_cycle</code>)</td><td class="">dio + dso - dpo</td><td class="">accrual</td></tr>
+<tr><td class="">Cash and bank balance (<code>cash_balance</code>)</td><td class="">sum(latest statement balance per account on/before as_of)</td><td class="">cash, amounts excl. GST</td></tr>
+<tr><td class="">Average monthly net burn (<code>net_burn</code>)</td><td class="">-mean(monthly net cash change, last 3 months) if negative</td><td class="">cash, amounts excl. GST</td></tr>
+<tr><td class="">Receivables aging (<code>ar_aging</code>)</td><td class="">sum(open balance where days past due in bucket)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Payables aging (<code>ap_aging</code>)</td><td class="">sum(open balance where days past due in bucket)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Revenue by customer (<code>revenue_by_customer</code>)</td><td class="">group_by(sales register taxable value, customer_id)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Revenue by product (<code>revenue_by_product</code>)</td><td class="">group_by(sales register taxable value, sku)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Revenue by channel (<code>revenue_by_channel</code>)</td><td class="">group_by(sales register taxable value, channel)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Customer concentration (<code>customer_concentration</code>)</td><td class="">sum(top 1 customers) / total</td><td class="">accrual</td></tr>
+<tr><td class="">Budget variance (<code>budget_variance</code>)</td><td class="">actual - budget; pct = variance / abs(budget)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Marketplace / gateway fees (<code>marketplace_fees</code>)</td><td class="">sum(settlement fee components excl. GST on fees)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">Settlement variance (<code>settlement_variance</code>)</td><td class="">timing: unmatched within settlement_to_bank_days; unexplained: beyond the window or conflicting</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_ar_overdue_total (<code>rx_ar_overdue_total</code>)</td><td class="">sum(amount_outstanding where as_of - due_date &gt; threshold_days)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_ar_overdue_share (<code>rx_ar_overdue_share</code>)</td><td class="">rx_ar_overdue_total / total open receivables</td><td class="">accrual</td></tr>
+<tr><td class="">rx_ar_overdue_by_customer (<code>rx_ar_overdue_by_customer</code>)</td><td class="">rx_ar_overdue_total grouped by customer</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_customer_revenue_share (<code>rx_customer_revenue_share</code>)</td><td class="">customer taxable sales / total sales register</td><td class="">accrual</td></tr>
+<tr><td class="">scn_collect_overdue_cash (<code>scn_collect_overdue_cash</code>)</td><td class="">cash_balance + rx_ar_overdue_total</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">scn_collect_overdue_dso (<code>scn_collect_overdue_dso</code>)</td><td class="">((opening AR + closing AR - overdue) / 2) / credit_sales * days</td><td class="">accrual</td></tr>
+<tr><td class="">scn_collect_overdue_dso_change (<code>scn_collect_overdue_dso_change</code>)</td><td class="">scn_collect_overdue_dso - dso</td><td class="">accrual</td></tr>
+<tr><td class="">scn_dso_reduction_cash_release (<code>scn_dso_reduction_cash_release</code>)</td><td class="">dso_reduction_days * credit_sales_incl_tax / days(period)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_customer_open_receivables (<code>rx_customer_open_receivables</code>)</td><td class="">sum(amount_outstanding) for the customer</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_budget_shortfall (<code>rx_budget_shortfall</code>)</td><td class="">abs(unfavourable budget variance)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_msme_overdue_total (<code>rx_msme_overdue_total</code>)</td><td class="">sum(outstanding) for micro/small suppliers beyond max_days</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_msme_overdue_by_supplier (<code>rx_msme_overdue_by_supplier</code>)</td><td class="">rx_msme_overdue_total grouped by supplier</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_msme_max_days (<code>rx_msme_max_days</code>)</td><td class="">max(as_of - bill_date)</td><td class="">accrual</td></tr>
+<tr><td class="">scn_msme_clearance_cash_after (<code>scn_msme_clearance_cash_after</code>)</td><td class="">cash_balance - rx_msme_overdue_total</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_cost_growth_gap (<code>rx_cost_growth_gap</code>)</td><td class="">category growth - revenue_growth</td><td class="">accrual</td></tr>
+<tr><td class="">scn_cost_normalisation_saving (<code>scn_cost_normalisation_saving</code>)</td><td class="">actual_k[P] - actual_k[C] * (1 + revenue_growth)</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_bank_book_difference (<code>rx_bank_book_difference</code>)</td><td class="">bank statement balance - book cash_and_cash_equivalents</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_settlement_unlocated (<code>rx_settlement_unlocated</code>)</td><td class="">expected net not located in bank credits</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">rx_settlement_days_unlocated (<code>rx_settlement_days_unlocated</code>)</td><td class="">as_of - settlement_date</td><td class="">accrual</td></tr>
+<tr><td class="">rx_settlement_component (<code>rx_settlement_component</code>)</td><td class="">sum(gross_amount) of settlements in the period</td><td class="">accrual, amounts excl. GST</td></tr>
+<tr><td class="">scn_settlement_recovery_cash (<code>scn_settlement_recovery_cash</code>)</td><td class="">cash_balance + sum(unlocated settlements)</td><td class="">accrual, amounts excl. GST</td></tr>
+</tbody></table>
+<h2>Appendix — source trace for key figures</h2>
+<table><thead><tr><th class="">calc_id</th><th class="">Metric</th><th class="">Source</th></tr></thead><tbody>
+<tr><td class="">CALC-0001</td><td class="">gross_revenue</td><td class="">accounts 4000</td></tr>
+<tr><td class="">CALC-0002</td><td class="">sales_returns_and_allowances</td><td class="">accounts 4010</td></tr>
+<tr><td class="">CALC-0003</td><td class="">net_revenue</td><td class="">accounts 4000, 4010</td></tr>
+<tr><td class="">CALC-0004</td><td class="">cogs</td><td class="">accounts 5000, 5010, 5020</td></tr>
+<tr><td class="">CALC-0005</td><td class="">gross_profit</td><td class="">accounts 4000, 4010, 5000, 5010, 5020</td></tr>
+<tr><td class="">CALC-0007</td><td class="">operating_expenses</td><td class="">accounts 6000, 6010, 6020, 6030, 6040</td></tr>
+<tr><td class="">CALC-0008</td><td class="">ebitda</td><td class="">accounts 4000, 4010, 5000, 5010, 5020, 6000, 6010, 6020, 6030, 6040</td></tr>
+<tr><td class="">CALC-0010</td><td class="">operating_profit</td><td class="">accounts 4000, 4010, 5000, 5010, 5020, 6000, 6010, 6020, 6030, 6040, 6100</td></tr>
+<tr><td class="">CALC-0012</td><td class="">profit_before_tax</td><td class="">accounts 4000, 4010, 4100, 5000, 5010, 5020, 6000, 6010, 6020, 6030, 6040, 6100 …</td></tr>
+<tr><td class="">CALC-0013</td><td class="">net_profit</td><td class="">accounts 4000, 4010, 4100, 5000, 5010, 5020, 6000, 6010, 6020, 6030, 6040, 6100 …</td></tr>
+<tr><td class="">CALC-0017</td><td class="">expense_by_category</td><td class="">accounts 6030</td></tr>
+<tr><td class="">CALC-0018</td><td class="">expense_by_category</td><td class="">accounts 5010</td></tr>
+<tr><td class="">CALC-0019</td><td class="">expense_by_category</td><td class="">accounts 6100</td></tr>
+<tr><td class="">CALC-0020</td><td class="">expense_by_category</td><td class="">accounts 6000</td></tr>
+<tr><td class="">CALC-0021</td><td class="">expense_by_category</td><td class="">accounts 6200</td></tr>
+<tr><td class="">CALC-0022</td><td class="">expense_by_category</td><td class="">accounts 5020</td></tr>
+<tr><td class="">CALC-0023</td><td class="">expense_by_category</td><td class="">accounts 6020</td></tr>
+<tr><td class="">CALC-0024</td><td class="">expense_by_category</td><td class="">accounts 6040</td></tr>
+<tr><td class="">CALC-0025</td><td class="">expense_by_category</td><td class="">accounts 5000</td></tr>
+<tr><td class="">CALC-0026</td><td class="">expense_by_category</td><td class="">accounts 6010</td></tr>
+<tr><td class="">CALC-0095</td><td class="">accounts_receivable</td><td class="">accounts 1200</td></tr>
+<tr><td class="">CALC-0096</td><td class="">accounts_payable</td><td class="">accounts 2300</td></tr>
+<tr><td class="">CALC-0097</td><td class="">inventory_value</td><td class="">accounts 1100</td></tr>
+<tr><td class="">CALC-0102</td><td class="">outstanding_debt</td><td class="">accounts 2200</td></tr>
+<tr><td class="">CALC-0103</td><td class="">finance_costs</td><td class="">accounts 6200</td></tr>
+<tr><td class="">CALC-0114</td><td class="">ar_aging</td><td class="">ar_open_items.csv lines 2</td></tr>
+<tr><td class="">CALC-0115</td><td class="">ar_aging</td><td class="">ar_open_items.csv lines 3</td></tr>
+<tr><td class="">CALC-0117</td><td class="">ar_aging</td><td class="">ar_open_items.csv lines 4</td></tr>
+<tr><td class="">CALC-0118</td><td class="">ar_aging</td><td class="">ar_open_items.csv lines 5</td></tr>
+<tr><td class="">CALC-0119</td><td class="">ar_aging</td><td class="">ar_open_items.csv lines 6</td></tr>
+<tr><td class="">CALC-0121</td><td class="">ar_aging</td><td class="">ar_open_items.csv lines 2, 3, 4, 5, 6</td></tr>
+<tr><td class="">CALC-0122</td><td class="">ap_aging</td><td class="">ap_open_items.csv lines 4, 5</td></tr>
+<tr><td class="">CALC-0123</td><td class="">ap_aging</td><td class="">ap_open_items.csv lines 3</td></tr>
+<tr><td class="">CALC-0125</td><td class="">ap_aging</td><td class="">ap_open_items.csv lines 2</td></tr>
+<tr><td class="">CALC-0129</td><td class="">ap_aging</td><td class="">ap_open_items.csv lines 2, 3, 4, 5</td></tr>
+<tr><td class="">CALC-0130</td><td class="">revenue_by_customer</td><td class="">sales_lines.csv lines 2, 6, 11</td></tr>
+<tr><td class="">CALC-0131</td><td class="">revenue_by_customer</td><td class="">sales_lines.csv lines 3, 10</td></tr>
+<tr><td class="">CALC-0132</td><td class="">revenue_by_customer</td><td class="">sales_lines.csv lines 5, 7</td></tr>
+<tr><td class="">CALC-0133</td><td class="">revenue_by_customer</td><td class="">sales_lines.csv lines 4, 9</td></tr>
+<tr><td class="">CALC-0134</td><td class="">revenue_by_customer</td><td class="">sales_lines.csv lines 8, 12</td></tr>
+<tr><td class="">CALC-0135</td><td class="">revenue_by_product</td><td class="">sales_lines.csv lines 2, 5, 10, 11</td></tr>
+<tr><td class="">CALC-0136</td><td class="">revenue_by_product</td><td class="">sales_lines.csv lines 3, 4, 7, 12</td></tr>
+<tr><td class="">CALC-0137</td><td class="">revenue_by_product</td><td class="">sales_lines.csv lines 6, 8, 9</td></tr>
+<tr><td class="">CALC-0138</td><td class="">revenue_by_channel</td><td class="">sales_lines.csv lines 2, 3, 4, 6, 7, 10, 11</td></tr>
+<tr><td class="">CALC-0139</td><td class="">revenue_by_channel</td><td class="">sales_lines.csv lines 5, 8, 9, 12</td></tr>
+<tr><td class="">CALC-0144</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 6</td></tr>
+<tr><td class="">CALC-0145</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 6</td></tr>
+<tr><td class="">CALC-0146</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 6</td></tr>
+<tr><td class="">CALC-0147</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 6</td></tr>
+<tr><td class="">CALC-0148</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 3</td></tr>
+<tr><td class="">CALC-0149</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 3</td></tr>
+<tr><td class="">CALC-0150</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 3</td></tr>
+<tr><td class="">CALC-0151</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 3</td></tr>
+<tr><td class="">CALC-0152</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 5</td></tr>
+<tr><td class="">CALC-0153</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 5</td></tr>
+<tr><td class="">CALC-0154</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 5</td></tr>
+<tr><td class="">CALC-0155</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 5</td></tr>
+<tr><td class="">CALC-0156</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 4</td></tr>
+<tr><td class="">CALC-0157</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 4</td></tr>
+<tr><td class="">CALC-0158</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 4</td></tr>
+<tr><td class="">CALC-0159</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 4</td></tr>
+<tr><td class="">CALC-0160</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 2</td></tr>
+<tr><td class="">CALC-0161</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 2</td></tr>
+<tr><td class="">CALC-0162</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 2</td></tr>
+<tr><td class="">CALC-0163</td><td class="">budget_variance</td><td class="">trial_balance.csv, budget.csv lines 2</td></tr>
+<tr><td class="">CALC-0172</td><td class="">rx_ar_overdue_by_customer</td><td class="">ar_open_items.csv lines 6</td></tr>
+<tr><td class="">CALC-0173</td><td class="">rx_ar_overdue_by_customer</td><td class="">ar_open_items.csv lines 5</td></tr>
+<tr><td class="">CALC-0183</td><td class="">rx_customer_open_receivables</td><td class="">ar_open_items.csv lines 2</td></tr>
+<tr><td class="">CALC-0186</td><td class="">rx_msme_overdue_by_supplier</td><td class="">ap_open_items.csv lines 2</td></tr>
+<tr><td class="">CALC-0194</td><td class="">rx_settlement_unlocated</td><td class="">settlements.csv, bank_transactions.csv lines 4</td></tr>
+</tbody></table>
+<h2>Appendix — calculation register</h2>
+<table><thead><tr><th class="">calc_id</th><th class="">metric</th><th class="">dimension</th><th class="">period</th><th class="num">value</th><th class="">readiness</th></tr></thead><tbody>
+<tr><td class="">CALC-0001</td><td class="">gross_revenue</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">12000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0002</td><td class="">sales_returns_and_allowances</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0003</td><td class="">net_revenue</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">11800000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0004</td><td class="">cogs</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">7600000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0005</td><td class="">gross_profit</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">4200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0006</td><td class="">gross_margin</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0.3559322033898305084745762711864407</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0007</td><td class="">operating_expenses</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">2500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0008</td><td class="">ebitda</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">1700000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0009</td><td class="">ebitda_margin</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0.1440677966101694915254237288135593</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0010</td><td class="">operating_profit</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">1600000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0011</td><td class="">operating_margin</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0.1355932203389830508474576271186441</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0012</td><td class="">profit_before_tax</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">1450000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0013</td><td class="">net_profit</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">1087500.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0014</td><td class="">net_margin</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0.09216101694915254237288135593220339</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0015</td><td class="">effective_tax_rate</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0.25</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0016</td><td class="">cost_to_revenue_ratio</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0.8559322033898305084745762711864407</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0017</td><td class="">expense_by_category</td><td class="">account_class=advertising</td><td class="">H1 FY2025-26</td><td class="num">200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0018</td><td class="">expense_by_category</td><td class="">account_class=changes_in_inventories</td><td class="">H1 FY2025-26</td><td class="num">-500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0019</td><td class="">expense_by_category</td><td class="">account_class=depreciation_and_amortisation</td><td class="">H1 FY2025-26</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0020</td><td class="">expense_by_category</td><td class="">account_class=employee_benefits_expense</td><td class="">H1 FY2025-26</td><td class="num">1500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0021</td><td class="">expense_by_category</td><td class="">account_class=finance_costs</td><td class="">H1 FY2025-26</td><td class="num">200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0022</td><td class="">expense_by_category</td><td class="">account_class=freight_inward</td><td class="">H1 FY2025-26</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0023</td><td class="">expense_by_category</td><td class="">account_class=marketplace_fees</td><td class="">H1 FY2025-26</td><td class="num">400000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0024</td><td class="">expense_by_category</td><td class="">account_class=professional_fees</td><td class="">H1 FY2025-26</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0025</td><td class="">expense_by_category</td><td class="">account_class=purchases_of_stock_in_trade</td><td class="">H1 FY2025-26</td><td class="num">8000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0026</td><td class="">expense_by_category</td><td class="">account_class=rent</td><td class="">H1 FY2025-26</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0027</td><td class="">gross_revenue</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">10000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0028</td><td class="">sales_returns_and_allowances</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0029</td><td class="">net_revenue</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">9900000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0030</td><td class="">cogs</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">6480000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0031</td><td class="">gross_profit</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">3420000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0032</td><td class="">gross_margin</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">0.3454545454545454545454545454545455</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0033</td><td class="">operating_expenses</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">2150000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0034</td><td class="">ebitda</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">1270000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0035</td><td class="">ebitda_margin</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">0.1282828282828282828282828282828283</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0036</td><td class="">operating_profit</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">1170000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0037</td><td class="">operating_margin</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">0.1181818181818181818181818181818182</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0038</td><td class="">profit_before_tax</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">960000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0039</td><td class="">net_profit</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">745000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0040</td><td class="">net_margin</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">0.07525252525252525252525252525252525</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0041</td><td class="">effective_tax_rate</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">0.2239583333333333333333333333333333</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0042</td><td class="">cost_to_revenue_ratio</td><td class="">—</td><td class="">H1 FY2024-25</td><td class="num">0.8717171717171717171717171717171717</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0043</td><td class="">expense_by_category</td><td class="">account_class=advertising</td><td class="">H1 FY2024-25</td><td class="num">150000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0044</td><td class="">expense_by_category</td><td class="">account_class=changes_in_inventories</td><td class="">H1 FY2024-25</td><td class="num">-200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0045</td><td class="">expense_by_category</td><td class="">account_class=depreciation_and_amortisation</td><td class="">H1 FY2024-25</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0046</td><td class="">expense_by_category</td><td class="">account_class=employee_benefits_expense</td><td class="">H1 FY2024-25</td><td class="num">1300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0047</td><td class="">expense_by_category</td><td class="">account_class=finance_costs</td><td class="">H1 FY2024-25</td><td class="num">250000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0048</td><td class="">expense_by_category</td><td class="">account_class=freight_inward</td><td class="">H1 FY2024-25</td><td class="num">80000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0049</td><td class="">expense_by_category</td><td class="">account_class=marketplace_fees</td><td class="">H1 FY2024-25</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0050</td><td class="">expense_by_category</td><td class="">account_class=professional_fees</td><td class="">H1 FY2024-25</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0051</td><td class="">expense_by_category</td><td class="">account_class=purchases_of_stock_in_trade</td><td class="">H1 FY2024-25</td><td class="num">6600000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0052</td><td class="">expense_by_category</td><td class="">account_class=rent</td><td class="">H1 FY2024-25</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0053</td><td class="">revenue_growth</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0.1919191919191919191919191919191919</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0054</td><td class="">expense_growth</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0.1627906976744186046511627906976744</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0055</td><td class="">period_over_period_variance</td><td class="">line=gross_revenue, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">2000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0056</td><td class="">period_over_period_variance</td><td class="">line=gross_revenue, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.2</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0057</td><td class="">period_over_period_variance</td><td class="">line=sales_returns_and_allowances, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0058</td><td class="">period_over_period_variance</td><td class="">line=sales_returns_and_allowances, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">1</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0059</td><td class="">period_over_period_variance</td><td class="">line=net_revenue, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">1900000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0060</td><td class="">period_over_period_variance</td><td class="">line=net_revenue, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.1919191919191919191919191919191919</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0061</td><td class="">period_over_period_variance</td><td class="">line=cogs, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">1120000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0062</td><td class="">period_over_period_variance</td><td class="">line=cogs, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.1728395061728395061728395061728395</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0063</td><td class="">period_over_period_variance</td><td class="">line=gross_profit, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">780000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0064</td><td class="">period_over_period_variance</td><td class="">line=gross_profit, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.2280701754385964912280701754385965</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0065</td><td class="">period_over_period_variance</td><td class="">line=operating_expenses, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">350000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0066</td><td class="">period_over_period_variance</td><td class="">line=operating_expenses, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.1627906976744186046511627906976744</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0067</td><td class="">period_over_period_variance</td><td class="">line=ebitda, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">430000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0068</td><td class="">period_over_period_variance</td><td class="">line=ebitda, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.3385826771653543307086614173228346</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0069</td><td class="">period_over_period_variance</td><td class="">line=operating_profit, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">430000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0070</td><td class="">period_over_period_variance</td><td class="">line=operating_profit, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.3675213675213675213675213675213675</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0071</td><td class="">period_over_period_variance</td><td class="">line=profit_before_tax, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">490000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0072</td><td class="">period_over_period_variance</td><td class="">line=profit_before_tax, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.5104166666666666666666666666666667</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0073</td><td class="">period_over_period_variance</td><td class="">line=net_profit, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">342500.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0074</td><td class="">period_over_period_variance</td><td class="">line=net_profit, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.4597315436241610738255033557046980</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0075</td><td class="">cost_category_variance</td><td class="">account_class=advertising, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">50000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0076</td><td class="">cost_category_variance</td><td class="">account_class=advertising, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.3333333333333333333333333333333333</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0077</td><td class="">cost_category_variance</td><td class="">account_class=changes_in_inventories, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">-300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0078</td><td class="">cost_category_variance</td><td class="">account_class=changes_in_inventories, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">-1.5</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0079</td><td class="">cost_category_variance</td><td class="">account_class=depreciation_and_amortisation, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">0.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0080</td><td class="">cost_category_variance</td><td class="">account_class=depreciation_and_amortisation, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0081</td><td class="">cost_category_variance</td><td class="">account_class=employee_benefits_expense, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0082</td><td class="">cost_category_variance</td><td class="">account_class=employee_benefits_expense, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.1538461538461538461538461538461538</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0083</td><td class="">cost_category_variance</td><td class="">account_class=finance_costs, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">-50000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0084</td><td class="">cost_category_variance</td><td class="">account_class=finance_costs, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">-0.2</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0085</td><td class="">cost_category_variance</td><td class="">account_class=freight_inward, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">20000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0086</td><td class="">cost_category_variance</td><td class="">account_class=freight_inward, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.25</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0087</td><td class="">cost_category_variance</td><td class="">account_class=marketplace_fees, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0088</td><td class="">cost_category_variance</td><td class="">account_class=marketplace_fees, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.3333333333333333333333333333333333</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0089</td><td class="">cost_category_variance</td><td class="">account_class=professional_fees, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">0.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0090</td><td class="">cost_category_variance</td><td class="">account_class=professional_fees, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0091</td><td class="">cost_category_variance</td><td class="">account_class=purchases_of_stock_in_trade, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">1400000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0092</td><td class="">cost_category_variance</td><td class="">account_class=purchases_of_stock_in_trade, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0.2121212121212121212121212121212121</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0093</td><td class="">cost_category_variance</td><td class="">account_class=rent, measure=amount</td><td class="">H1 FY2025-26</td><td class="num">0.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0094</td><td class="">cost_category_variance</td><td class="">account_class=rent, measure=percent</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0095</td><td class="">accounts_receivable</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">2200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0096</td><td class="">accounts_payable</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">1500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0097</td><td class="">inventory_value</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">2500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0098</td><td class="">working_capital</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">3987500.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0099</td><td class="">working_capital</td><td class="">variant=operating</td><td class="">H1 FY2025-26</td><td class="num">3200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0100</td><td class="">current_ratio</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">2.981366459627329192546583850931677</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0101</td><td class="">quick_ratio</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">1.739130434782608695652173913043478</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0102</td><td class="">outstanding_debt</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">2500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0103</td><td class="">finance_costs</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0104</td><td class="">interest_coverage_ratio</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">8</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0105</td><td class="">debt_to_equity</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0.7380073800738007380073800738007380</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0106</td><td class="">inventory_turnover</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">3.377777777777777777777777777777778</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0107</td><td class="">dio</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">54.17763157894736842105263157894737</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0108</td><td class="">dso</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">25.84745762711864406779661016949152</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0109</td><td class="">dpo</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">32.50657894736842105263157894736842</td><td class="">partial</td></tr>
+<tr><td class="">CALC-0110</td><td class="">cash_conversion_cycle</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">47.51851025869759143621766280107047</td><td class="">partial</td></tr>
+<tr><td class="">CALC-0111</td><td class="">cash_balance</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">1280000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0112</td><td class="">net_burn</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0113</td><td class="">cash_runway</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">—</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0114</td><td class="">ar_aging</td><td class="">bucket=not_due</td><td class="">H1 FY2025-26</td><td class="num">600000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0115</td><td class="">ar_aging</td><td class="">bucket=1_30</td><td class="">H1 FY2025-26</td><td class="num">500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0116</td><td class="">ar_aging</td><td class="">bucket=31_60</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0117</td><td class="">ar_aging</td><td class="">bucket=61_90</td><td class="">H1 FY2025-26</td><td class="num">400000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0118</td><td class="">ar_aging</td><td class="">bucket=91_180</td><td class="">H1 FY2025-26</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0119</td><td class="">ar_aging</td><td class="">bucket=181_365</td><td class="">H1 FY2025-26</td><td class="num">400000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0120</td><td class="">ar_aging</td><td class="">bucket=over_365</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0121</td><td class="">ar_aging</td><td class="">bucket=total</td><td class="">H1 FY2025-26</td><td class="num">2200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0122</td><td class="">ap_aging</td><td class="">bucket=not_due</td><td class="">H1 FY2025-26</td><td class="num">500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0123</td><td class="">ap_aging</td><td class="">bucket=1_30</td><td class="">H1 FY2025-26</td><td class="num">700000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0124</td><td class="">ap_aging</td><td class="">bucket=31_60</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0125</td><td class="">ap_aging</td><td class="">bucket=61_90</td><td class="">H1 FY2025-26</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0126</td><td class="">ap_aging</td><td class="">bucket=91_180</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0127</td><td class="">ap_aging</td><td class="">bucket=181_365</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0128</td><td class="">ap_aging</td><td class="">bucket=over_365</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0129</td><td class="">ap_aging</td><td class="">bucket=total</td><td class="">H1 FY2025-26</td><td class="num">1500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0130</td><td class="">revenue_by_customer</td><td class="">customer_id=C001</td><td class="">H1 FY2025-26</td><td class="num">4200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0131</td><td class="">revenue_by_customer</td><td class="">customer_id=C002</td><td class="">H1 FY2025-26</td><td class="num">3000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0132</td><td class="">revenue_by_customer</td><td class="">customer_id=C003</td><td class="">H1 FY2025-26</td><td class="num">2000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0133</td><td class="">revenue_by_customer</td><td class="">customer_id=C004</td><td class="">H1 FY2025-26</td><td class="num">1600000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0134</td><td class="">revenue_by_customer</td><td class="">customer_id=C005</td><td class="">H1 FY2025-26</td><td class="num">1200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0135</td><td class="">revenue_by_product</td><td class="">sku=SKU-A</td><td class="">H1 FY2025-26</td><td class="num">5400000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0136</td><td class="">revenue_by_product</td><td class="">sku=SKU-B</td><td class="">H1 FY2025-26</td><td class="num">4000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0137</td><td class="">revenue_by_product</td><td class="">sku=SKU-C</td><td class="">H1 FY2025-26</td><td class="num">2600000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0138</td><td class="">revenue_by_channel</td><td class="">channel=direct_b2b</td><td class="">H1 FY2025-26</td><td class="num">9000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0139</td><td class="">revenue_by_channel</td><td class="">channel=marketplace_a</td><td class="">H1 FY2025-26</td><td class="num">3000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0140</td><td class="">customer_concentration</td><td class="">measure=top_1_share</td><td class="">H1 FY2025-26</td><td class="num">0.35</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0141</td><td class="">customer_concentration</td><td class="">measure=top_5_share</td><td class="">H1 FY2025-26</td><td class="num">1</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0142</td><td class="">customer_concentration</td><td class="">measure=top_10_share</td><td class="">H1 FY2025-26</td><td class="num">1</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0143</td><td class="">customer_concentration</td><td class="">measure=hhi</td><td class="">H1 FY2025-26</td><td class="num">2405.555555555555555555555555555556</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0144</td><td class="">budget_variance</td><td class="">account_class=advertising, measure=actual</td><td class="">H1 FY2025-26</td><td class="num">200000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0145</td><td class="">budget_variance</td><td class="">account_class=advertising, measure=budget</td><td class="">H1 FY2025-26</td><td class="num">250000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0146</td><td class="">budget_variance</td><td class="">account_class=advertising, measure=variance</td><td class="">H1 FY2025-26</td><td class="num">-50000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0147</td><td class="">budget_variance</td><td class="">account_class=advertising, measure=variance_pct</td><td class="">H1 FY2025-26</td><td class="num">-0.2</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0148</td><td class="">budget_variance</td><td class="">account_class=employee_benefits_expense, measure=actual</td><td class="">H1 FY2025-26</td><td class="num">1500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0149</td><td class="">budget_variance</td><td class="">account_class=employee_benefits_expense, measure=budget</td><td class="">H1 FY2025-26</td><td class="num">1400000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0150</td><td class="">budget_variance</td><td class="">account_class=employee_benefits_expense, measure=variance</td><td class="">H1 FY2025-26</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0151</td><td class="">budget_variance</td><td class="">account_class=employee_benefits_expense, measure=variance_pct</td><td class="">H1 FY2025-26</td><td class="num">0.07142857142857142857142857142857143</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0152</td><td class="">budget_variance</td><td class="">account_class=marketplace_fees, measure=actual</td><td class="">H1 FY2025-26</td><td class="num">400000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0153</td><td class="">budget_variance</td><td class="">account_class=marketplace_fees, measure=budget</td><td class="">H1 FY2025-26</td><td class="num">350000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0154</td><td class="">budget_variance</td><td class="">account_class=marketplace_fees, measure=variance</td><td class="">H1 FY2025-26</td><td class="num">50000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0155</td><td class="">budget_variance</td><td class="">account_class=marketplace_fees, measure=variance_pct</td><td class="">H1 FY2025-26</td><td class="num">0.1428571428571428571428571428571429</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0156</td><td class="">budget_variance</td><td class="">account_class=rent, measure=actual</td><td class="">H1 FY2025-26</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0157</td><td class="">budget_variance</td><td class="">account_class=rent, measure=budget</td><td class="">H1 FY2025-26</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0158</td><td class="">budget_variance</td><td class="">account_class=rent, measure=variance</td><td class="">H1 FY2025-26</td><td class="num">0.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0159</td><td class="">budget_variance</td><td class="">account_class=rent, measure=variance_pct</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0160</td><td class="">budget_variance</td><td class="">account_class=revenue_from_operations, measure=actual</td><td class="">H1 FY2025-26</td><td class="num">11800000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0161</td><td class="">budget_variance</td><td class="">account_class=revenue_from_operations, measure=budget</td><td class="">H1 FY2025-26</td><td class="num">12500000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0162</td><td class="">budget_variance</td><td class="">account_class=revenue_from_operations, measure=variance</td><td class="">H1 FY2025-26</td><td class="num">-700000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0163</td><td class="">budget_variance</td><td class="">account_class=revenue_from_operations, measure=variance_pct</td><td class="">H1 FY2025-26</td><td class="num">-0.056</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0164</td><td class="">marketplace_fees</td><td class="">provider=gateway_x</td><td class="">H1 FY2025-26</td><td class="num">4000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0165</td><td class="">marketplace_fees</td><td class="">provider=marketplace_a</td><td class="">H1 FY2025-26</td><td class="num">96000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0166</td><td class="">marketplace_fees</td><td class="">provider=all</td><td class="">H1 FY2025-26</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0167</td><td class="">settlement_variance</td><td class="">class=timing</td><td class="">H1 FY2025-26</td><td class="num">246020.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0168</td><td class="">settlement_variance</td><td class="">class=unexplained</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0169</td><td class="">settlement_variance</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">246020.00</td><td class="">partial</td></tr>
+<tr><td class="">CALC-0170</td><td class="">rx_ar_overdue_total</td><td class="">threshold_days=90</td><td class="">H1 FY2025-26</td><td class="num">700000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0171</td><td class="">rx_ar_overdue_share</td><td class="">threshold_days=90</td><td class="">H1 FY2025-26</td><td class="num">0.3181818181818181818181818181818182</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0172</td><td class="">rx_ar_overdue_by_customer</td><td class="">customer_id=C005, threshold_days=90</td><td class="">H1 FY2025-26</td><td class="num">400000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0173</td><td class="">rx_ar_overdue_by_customer</td><td class="">customer_id=C004, threshold_days=90</td><td class="">H1 FY2025-26</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0174</td><td class="">rx_customer_revenue_share</td><td class="">customer_id=C004</td><td class="">H1 FY2025-26</td><td class="num">0.1333333333333333333333333333333333</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0175</td><td class="">rx_customer_revenue_share</td><td class="">customer_id=C005</td><td class="">H1 FY2025-26</td><td class="num">0.1</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0176</td><td class="">scn_collect_overdue_cash</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">1980000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0177</td><td class="">scn_collect_overdue_dso</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">21.32415254237288135593220338983050</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0178</td><td class="">scn_collect_overdue_dso_change</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">-4.52330508474576271186440677966102</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0179</td><td class="">scn_dso_reduction_cash_release</td><td class="">dso_reduction_days=10</td><td class="">H1 FY2025-26</td><td class="num">773770.4918032786885245901639344262</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0180</td><td class="">rx_customer_revenue_share</td><td class="">customer_id=C001</td><td class="">H1 FY2025-26</td><td class="num">0.35</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0181</td><td class="">rx_customer_revenue_share</td><td class="">customer_id=C002</td><td class="">H1 FY2025-26</td><td class="num">0.25</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0182</td><td class="">rx_customer_revenue_share</td><td class="">customer_id=C003</td><td class="">H1 FY2025-26</td><td class="num">0.1666666666666666666666666666666667</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0183</td><td class="">rx_customer_open_receivables</td><td class="">customer_id=C001</td><td class="">H1 FY2025-26</td><td class="num">600000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0184</td><td class="">rx_budget_shortfall</td><td class="">account_class=revenue_from_operations</td><td class="">H1 FY2025-26</td><td class="num">700000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0185</td><td class="">rx_msme_overdue_total</td><td class="">max_days=45</td><td class="">H1 FY2025-26</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0186</td><td class="">rx_msme_overdue_by_supplier</td><td class="">supplier_id=S001, max_days=45</td><td class="">H1 FY2025-26</td><td class="num">300000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0187</td><td class="">rx_msme_max_days</td><td class="">max_days=45</td><td class="">H1 FY2025-26</td><td class="num">91</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0188</td><td class="">scn_msme_clearance_cash_after</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">980000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0189</td><td class="">rx_cost_growth_gap</td><td class="">account_class=marketplace_fees</td><td class="">H1 FY2025-26</td><td class="num">0.1414141414141414141414141414141414</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0190</td><td class="">scn_cost_normalisation_saving</td><td class="">account_class=marketplace_fees</td><td class="">H1 FY2025-26</td><td class="num">42424.2424242424242424242424242424</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0191</td><td class="">rx_budget_shortfall</td><td class="">account_class=marketplace_fees</td><td class="">H1 FY2025-26</td><td class="num">50000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0192</td><td class="">rx_budget_shortfall</td><td class="">account_class=employee_benefits_expense</td><td class="">H1 FY2025-26</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0193</td><td class="">rx_bank_book_difference</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">-20000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0194</td><td class="">rx_settlement_unlocated</td><td class="">settlement_id=MA-SET-0003</td><td class="">H1 FY2025-26</td><td class="num">246020.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0195</td><td class="">rx_settlement_days_unlocated</td><td class="">settlement_id=MA-SET-0003</td><td class="">H1 FY2025-26</td><td class="num">5</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0196</td><td class="">rx_settlement_component</td><td class="">component=gross_amount</td><td class="">H1 FY2025-26</td><td class="num">1000000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0197</td><td class="">rx_settlement_component</td><td class="">component=fees</td><td class="">H1 FY2025-26</td><td class="num">100000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0198</td><td class="">rx_settlement_component</td><td class="">component=tax_on_fees</td><td class="">H1 FY2025-26</td><td class="num">18000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0199</td><td class="">rx_settlement_component</td><td class="">component=refunds</td><td class="">H1 FY2025-26</td><td class="num">30000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0200</td><td class="">rx_settlement_component</td><td class="">component=withholdings</td><td class="">H1 FY2025-26</td><td class="num">4000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0201</td><td class="">rx_settlement_component</td><td class="">component=adjustments</td><td class="">H1 FY2025-26</td><td class="num">0</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0202</td><td class="">rx_settlement_component</td><td class="">component=net_amount</td><td class="">H1 FY2025-26</td><td class="num">848000.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0203</td><td class="">scn_settlement_recovery_cash</td><td class="">—</td><td class="">H1 FY2025-26</td><td class="num">1526020.00</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0204</td><td class="">rx_cost_growth_gap</td><td class="">account_class=advertising</td><td class="">H1 FY2025-26</td><td class="num">0.1414141414141414141414141414141414</td><td class="">ready</td></tr>
+<tr><td class="">CALC-0205</td><td class="">scn_cost_normalisation_saving</td><td class="">account_class=advertising</td><td class="">H1 FY2025-26</td><td class="num">21212.1212121212121212121212121212</td><td class="">ready</td></tr>
+</tbody></table>
+<h2>Disclaimer</h2>
+<p>This analysis is prepared from the data you authorised and provided, using documented methods. It is decision support, not an audit, review, tax, legal or investment opinion. Figures labelled estimate, forecast or hypothesis carry uncertainty. Please review material decisions, tax matters and statutory filings with your Chartered Accountant or other qualified adviser.</p>
+<p>GST and income-tax data checks test consistency between datasets only and do not confirm compliance or filing correctness. Items listed for review are screening results, not findings of wrongdoing.</p>
+<h2>Verification</h2>
+<table><thead><tr><th class="">Check</th><th class="">Status</th><th class="">Details</th></tr></thead><tbody>
+<tr><td class="">ver_no_fabrication</td><td class="">passed</td><td class="">all inputs exist with matching hashes</td></tr>
+<tr><td class="">ver_recompute_figures</td><td class="">passed</td><td class="">82 figures recomputed independently and matched</td></tr>
+<tr><td class="">ver_register_tieout</td><td class="">passed</td><td class="">244 rendered figures tie to the register</td></tr>
+<tr><td class="">ver_placeholders_resolved</td><td class="">passed</td><td class="">none left</td></tr>
+<tr><td class="">ver_narrative_raw_numbers</td><td class="">passed</td><td class="">narrative uses placeholders for all figures</td></tr>
+<tr><td class="">ver_cross_footing</td><td class="">passed</td><td class="">statement, aging, budget and variance identities hold</td></tr>
+<tr><td class="">ver_claim_evidence</td><td class="">passed</td><td class="">every finding and recommendation cites valid evidence</td></tr>
+<tr><td class="">ver_claim_topic_consistency</td><td class="">passed</td><td class="">cited figures match the topics mentioned</td></tr>
+<tr><td class="">ver_direction_words</td><td class="">passed</td><td class="">no contradictions found</td></tr>
+<tr><td class="">ver_limitations_disclosed</td><td class="">passed</td><td class="">every non-ready metric is listed under Limitations</td></tr>
+<tr><td class="">ver_masking</td><td class="">passed</td><td class="">no unmasked identifiers detected</td></tr>
+<tr><td class="">ver_boundary_language</td><td class="">passed</td><td class="">no prohibited assurance language</td></tr>
+<tr><td class="">ver_disclaimers</td><td class="">passed</td><td class="">standard disclaimer present</td></tr>
+<tr><td class="">ver_double_count_guard</td><td class="">passed</td><td class="">no bank line or settlement counted twice</td></tr>
+<tr><td class="">ver_conflict_figures</td><td class="">passed</td><td class="">conflict figures recompute</td></tr>
+<tr><td class="">ver_status_consistency</td><td class="">passed</td><td class="">status line counts equal the issue, reconciliation and calculation registers</td></tr>
+<tr><td class="">ver_profit_labels</td><td class="">passed</td><td class="">every profit mention names its level and cites it</td></tr>
+<tr><td class="">ver_savings_claims</td><td class="">passed</td><td class="">no unsupported savings claims</td></tr>
+<tr><td class="">ver_leakage_classification</td><td class="">passed</td><td class="">no recoverable, reversal or timing item called leakage</td></tr>
+<tr><td class="">ver_evidence_separation</td><td class="">passed</td><td class="">verified findings, exceptions, estimates and hypotheses are separated</td></tr>
+<tr><td class="">ver_source_trace</td><td class="">passed</td><td class="">75 figure(s) traced to accounts or source rows and re-added</td></tr>
+<tr><td class="">ver_excel_formulas</td><td class="">passed</td><td class="">60 formulas evaluated independently, 60 equal their register values; LibreOffice: ok (60 compared, 0 mismatches)</td></tr>
+<tr><td class="">ver_chart_data</td><td class="">passed</td><td class="">26 charted value(s) match the register</td></tr>
+<tr><td class="">ver_approval_gates</td><td class="">passed</td><td class="">no external or financial action executed; prepared files match approvals</td></tr>
+</tbody></table>
+<p>Draft SHA-256: b1c01b47777b06b95566544379c34bff9dbdba340121c85bde2824101e6b947e</p></body></html>

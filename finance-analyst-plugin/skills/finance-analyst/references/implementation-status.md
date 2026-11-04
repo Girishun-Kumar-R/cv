@@ -1,11 +1,12 @@
-# Implementation status — toolkit v0.2.0 against spec v1.2.0
+# Implementation status — toolkit v0.3.0 against spec v1.3.0
 
 Only the items marked **implemented** have working code in `scripts/` and automated tests in
 `tests/test_toolkit.py`. Everything else is specified in `finance-analyst.yaml` but must not be described to the
 customer as computed by this plugin.
 
-Test run when packaged: 47 tests (24 toolkit + 23 reflex engine), all passing, on Python 3.11, 3.12 and 3.13
-(Linux). Not tested inside the Claude Desktop or Cowork sandboxes themselves.
+Test run when packaged: 74 tests (24 toolkit + 23 reflex + 27 hardening regression). Python 3.13 with openpyxl and
+LibreOffice: 74 passed, 0 skipped. Python 3.11 and 3.12 without openpyxl: 71 passed, 3 skipped (Excel tests).
+Linux only; not tested inside the Claude Desktop or Cowork sandboxes themselves.
 
 ## Workflow stages
 
@@ -72,6 +73,21 @@ average_selling_price, discount_rate.
 | Reconciliation | rec_settlement_to_bank (UTR strong key, then exact amount + date window as probable) | the other 10 rules |
 | Verification | 17 checks incl. independent recomputation (registry and reflex figures), register tie-out, cross-footing, claim evidence (narrative and reflex items), topic consistency (warning), masking, boundary language, double-count guard, ver_chart_data, ver_approval_gates | ver_bridge_integrity, ver_period_unit_basis, ver_labels_present, translation_figure_integrity |
 
+## 1.3.0 audit hardening (regression-tested in `tests/test_hardening.py`)
+
+| Audit issue class | Root cause found in the plugin | Fix | Guard |
+|---|---|---|---|
+| Validation-status contradiction | Header said "Verified … passed" while high issues and unmatched settlements were open | Status line separates calculation verification from data validation with exact counts | `ver_status_consistency` |
+| Revenue vs budget basis | Budget revenue compared with gross ledger revenue while the P&L headline is net revenue | `amount_basis` per budget line; net revenue default; tax-inclusive blocked; basis shown in tables | recompute uses the same basis |
+| Monthly ("January") profit discrepancy | No check that monthly figures add up to the period | Monthly P&L from monthly TBs; `ai_period_rollup`; inconsistent month withheld; dashboard Sum-of-months and Difference formulas | `ai_period_rollup`, cross-footing, `ver_excel_formulas` |
+| Misleading profit labels | Profit before tax shown as "Net profit" when no tax was booked | `net_profit` not stated without a tax provision; labels name the profit level | `ver_profit_labels` |
+| Unsupported savings estimates | Revenue-proportional gap presented as "Potential saving" | Reported as an indicative gap with `impact_basis: indicative` (low priority) | `ver_savings_claims` |
+| Leakage classifications | Recoverable credits and in-transit settlements sat with real shortfalls | Component nature (credit, reversal, cost, timing); timing vs unexplained split of `settlement_variance` | `ver_leakage_classification` |
+| Mixed evidence | Scenarios and exceptions appeared next to facts | Separate report sections; partial-input facts downgraded | `ver_evidence_separation` |
+| Traceability | Figures listed datasets but not accounts or rows | `source_accounts` / `source_rows` on ledger and sub-ledger figures; re-add check | `ver_source_trace` |
+| PDF and charts | Markdown only; small chart text; overlapping labels | HTML/PDF renderer (A4, page numbers, status box); larger fonts, wrapped labels, staggered waterfall labels, dynamic chart height | HTML/PDF and chart tests |
+| Excel formulas | Dashboards were not validated | `fa_xlsx.py` dashboard + `fa_xlsx_audit.py` (own evaluator, LibreOffice cross-check, wrong-month reference detection) | `ver_excel_formulas` |
+
 ## Known limitations
 
 - INR only (other currencies are refused by the run config check rather than converted).
@@ -84,4 +100,11 @@ average_selling_price, discount_rate.
   the task (or the customer provides as files). Vendor drill-downs and bank-ledger BRS requests are analysed by
   the agent outside the verified toolkit.
 - Approvals are recorded in an `approvals.json` file; the plugin has no native approval UI.
+- The formula auditor supports SUM, AVERAGE, MIN, MAX, ABS, ROUND, IF, IFERROR, INDEX, MATCH (exact), SUMIF,
+  COUNT, COUNTA, SUMPRODUCT, AND, OR, NOT and arithmetic; other functions are reported as unsupported (the
+  workbook then fails the audit rather than passing unchecked). Customer workbooks without cached values can only
+  be cross-checked with LibreOffice.
+- PDF needs a headless Chromium; Excel needs openpyxl. Without them the run says so and produces HTML/Markdown.
+- The hardening was reproduced on synthetic data; the customer workbook and report that prompted it were not
+  available in the session that built it, so their specific figures were not re-checked.
 - Reflex thresholds are configurable attention flags; defaults are documented, not universal benchmarks.

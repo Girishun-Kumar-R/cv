@@ -11,8 +11,8 @@ description: >
   After every analysis its Proactive Financial Reflex Engine detects important findings, runs read-only
   investigations, scenarios and charts automatically, and queues external or financial actions for approval.
 metadata:
-  version: "0.2.0"
-  spec_version: "1.2.0"
+  version: "0.3.0"
+  spec_version: "1.3.0"
 ---
 
 # Finance Analyst AI — Virtual CFO
@@ -41,12 +41,20 @@ All paths below are relative to this skill's base directory.
    from a source already authorised and used in this task. External actions (emails, uploads, sharing, claims)
    and financial write actions (payments, postings, refunds, filings) always need explicit approval, and
    financial writes are never executed by the plugin — it prepares proposals for the customer to execute.
+9. Keep definitions consistent (spec 1.3.0): name every profit level (gross, EBITDA, operating, before tax, after
+   tax); never say "net profit" unless a tax provision is booked; compare revenue budgets on their declared
+   `amount_basis` (net revenue by default); never call an indicative gap a "saving" without customer or contract
+   evidence; never call GST on fees, TCS/TDS withheld, refunds or in-transit settlements "leakage" — only
+   unexplained shortfalls beyond the timing window may be called potential leakage, and never a confirmed loss.
+10. Report status honestly: "Calculations verified" (figures recompute) is separate from data validation (open
+   issues, unresolved reconciliation exceptions, partial/blocked figures). Never describe results as fully
+   validated while exceptions are open.
 
 ## Bundled components
 
 | Path | Purpose |
 |---|---|
-| `finance-analyst.yaml` | Master specification (v1.2.0): workflow, rules, metric formulas, checks, reports, reflex engine |
+| `finance-analyst.yaml` | Master specification (v1.3.0): workflow, rules, metric formulas, checks, reports, reflex engine |
 | `scripts/fa_spec.py` | Read the spec by section (`list`, `section KEY`, `get a.b.c`) and `validate` it |
 | `scripts/fa_discover.py` | Metadata-only discovery of customer files (columns, rows, dates, totals, template match) |
 | `scripts/fa_classify.py` | Propose canonical account classes for a chart of accounts / Tally-style trial balance |
@@ -55,6 +63,9 @@ All paths below are relative to this skill's base directory.
 | `scripts/fa_verify.py` | Independent verification (recomputes figures with separate code; checks claims and language) |
 | `scripts/fa_reflex.py` | Proactive Financial Reflex Engine: triggers, gated investigations, scenarios, insights, actions |
 | `scripts/fa_charts.py` | Accessible SVG charts bound to calculation-register values |
+| `scripts/fa_render.py` | Print-ready HTML (inline SVG charts) and PDF via headless Chromium when available |
+| `scripts/fa_xlsx.py` | Excel dashboard with live formulas mapped to calc_ids (needs openpyxl) |
+| `scripts/fa_xlsx_audit.py` | Independent formula auditor for any .xlsx (own evaluator + optional LibreOffice cross-check) |
 | `templates/reflex_rules.json` | Default reflex rules, thresholds, limits and approval gates (override in `run_config.reflex`) |
 | `templates/inputs/*.csv` | Canonical input headers; `templates/run_config.template.json`; `templates/narrative.template.json` |
 | `templates/mappings/*.json` | Example mappings (TallyPrime two-snapshot trial balance; bank withdrawal/deposit CSV) |
@@ -130,12 +141,18 @@ request. Detailed instructions per stage are in `references/stage-playbook.md`; 
    analysis needs a metric the toolkit does not implement (see `references/implementation-status.md`), say so;
    do not put unregistered figures into the report.
 8. **Recommend** — Review the reflex engine's prioritised actions and insights, then write `narrative.json`
-   (see `references/narrative-format.md`): executive summary, findings
+   (see `references/narrative-format.md`; label every finding fact, limited, estimate, hypothesis or
+   customer_provided — the report separates verified findings, unresolved reconciliation exceptions, estimates
+   and hypotheses): executive summary, findings
    and recommendations with placeholders such as `{{metric:net_revenue}}` or
    `{{metric:ar_aging[bucket=181_365]}}`, evidence `refs` for every item, confidence, effort and whether CA
    review is needed. Do not type figures; use `{{input:VALUE|SOURCE}}` for customer-supplied assumptions.
 9. **Report and verify** — Re-run `fa_run.py` with `--narrative <data>/narrative.json` and `--depth simple` or
-   `--depth comprehensive` (custom depth: choose sections in the narrative and state omissions). Exit code 0
+   `--depth comprehensive` (custom depth: choose sections in the narrative and state omissions). The run also
+   writes `report.html`, `report.pdf` (when a headless Chromium exists) and `dashboard.xlsx` (when openpyxl
+   exists); `--formats md,html,pdf,xlsx` controls this. Every dashboard formula is checked by `ver_excel_formulas`.
+   To audit a customer's own workbook, run `python3 scripts/fa_xlsx_audit.py --workbook FILE --libreoffice`
+   and report its problems verbatim; do not "fix" a customer workbook silently. Exit code 0
    means verified; 3 means verification failed — fix the narrative or data and re-run (at most two remediation
    loops), otherwise deliver only what passed with an explicit explanation. Treat a
    `ver_claim_topic_consistency` warning as something to fix or justify before delivery.

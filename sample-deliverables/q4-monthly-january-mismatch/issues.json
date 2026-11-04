@@ -1,0 +1,21 @@
+[
+  {
+    "issue_id": "ISS-0001",
+    "check_id": "ai_period_rollup",
+    "severity": "critical",
+    "dataset": "trial_balance",
+    "records_affected": 4,
+    "amount_affected": "50000.00",
+    "description": "Sub-period trial balances do not roll up to Q4 FY2025-26: profit after all booked expenses by sub-period 2026-01 100000.00, 2026-02 200000.00, 2026-03 240000.00 vs period 590000.00 (difference 50000.00). The monthly breakdown is withheld; period totals come from the period trial balance.",
+    "status": "open",
+    "blocks": [
+      "tb_months"
+    ],
+    "evidence": [
+      "account 1300 (Bank): months sum to 690000.00, period shows 740000.00",
+      "account 6000 (Salaries): months sum to 660000.00, period shows 610000.00",
+      "2026-03 closing differs from Q4 FY2025-26 closing for account 1300 (1090000.00 vs 1140000.00)",
+      "2026-03 closing differs from Q4 FY2025-26 closing for account 6000 (660000.00 vs 610000.00)"
+    ]
+  }
+]

@@ -18,7 +18,7 @@ Conventions for every file:
 | `ar_open_items.csv` | **customer_id, invoice_number, invoice_date, amount_outstanding**, customer_name, customer_gstin, due_date, currency | receivables aging, AR tie-out to the ledger |
 | `ap_open_items.csv` | **supplier_id, bill_number, bill_date, amount_outstanding**, supplier_name, supplier_gstin, msme_classification (`micro`, `small`, `medium`, `not_msme`, `unknown`), due_date, currency | payables aging, AP tie-out, MSME timing flags |
 | `sales_lines.csv` | **invoice_number, invoice_date, customer_id, taxable_value, tax_amount**, customer_name, sku, channel, quantity, currency | revenue by customer/product/channel, concentration, DSO denominator incl. GST |
-| `budget.csv` | **budget_version, approval_status (`approved`/`draft`), period_label, account_class, amount** | budget vs actual by account class |
+| `budget.csv` | **budget_version, approval_status (`approved`/`draft`), period_label, account_class, amount**, amount_basis (`net_revenue` (default for revenue), `gross_revenue`, `tax_exclusive`, `tax_inclusive` → blocked) | budget vs actual by account class on a stated basis |
 | `settlements.csv` | **provider, settlement_id, settlement_date, gross_amount, fees, net_amount**, tax_on_fees, refunds, withholdings, adjustments, bank_reference (UTR), currency | settlement arithmetic check, settlement-to-bank reconciliation, fees, settlement variance |
 | `journal_lines.csv` | **journal_id, posting_date, account_id, debit, credit**, narration | debit = credit check per voucher |
 
@@ -33,6 +33,16 @@ Conventions for every file:
 - For a period that starts at the financial-year start, P&L accounts have zero opening balances.
 - If only two "as at" trial balances exist (e.g. TallyPrime exports at 1-Apr and 30-Sep), use
   `templates/mappings/tally_trial_balance_two_snapshots.json`; movements are then net per ledger.
+
+## Monthly or quarterly breakdown
+
+Add one trial-balance block per month (its own `period_label`, e.g. `2026-01`, with opening, movement and
+closing for that month) in the same `trial_balance.csv` as the period total. Months inside the current period
+are detected automatically (or list them in `run_config.sub_periods`). The roll-up check `ai_period_rollup`
+requires the months to cover the period contiguously, the month movements per account to add up to the period
+movement, each month's closing to equal the next month's opening, and the first and last months to match the
+period's opening and closing. If not, the monthly breakdown is withheld (period figures are unaffected) and the
+accounts and months that differ are listed.
 
 ## Mapping connector data
 

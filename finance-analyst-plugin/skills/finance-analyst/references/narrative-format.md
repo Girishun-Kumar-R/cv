@@ -57,7 +57,21 @@ it does not measure (the verifier warns when, for example, a receivables stateme
 ## Writing rules
 
 - Lead with the answer; one idea per finding.
-- Label each finding: `fact`, `estimate`, `hypothesis` (say how it could be confirmed), or `customer_provided`.
+- Label each finding: `fact` (cites only ready, non-scenario figures), `limited` (relies on a partial figure),
+  `estimate` (scenario or indicative figure), `hypothesis` (say how it could be confirmed), or `customer_provided`.
+  The report groups them into Verified findings, Findings with stated limitations, Unresolved reconciliation
+  exceptions, Estimates and scenarios, and Hypotheses; `ver_evidence_separation` rejects a `fact` that cites a
+  scenario or a partial figure.
+- Profit: always name the level — gross profit, EBITDA, operating profit, profit before tax, profit after tax
+  (net profit) — and cite that metric. "Net profit" needs `net_profit` ready (tax provision booked).
+  `ver_profit_labels` rejects "profit" alone and a level that does not match the cited figure.
+- Savings: words like save, saving, cut costs or "cost X less" need `{{input:VALUE|SOURCE}}` from a customer,
+  quote or contract. Mechanical or indicative figures (e.g. `scn_cost_normalisation_saving`) are gaps, not
+  savings (`ver_savings_claims`).
+- Leakage: GST on fees and TCS/TDS withheld are recoverable tax credits, refunds are revenue reversals, and
+  settlements within the timing window are timing differences. Use "potential leakage" only when citing
+  `settlement_variance[class=unexplained]` or an unexplained `rx_settlement_unlocated`
+  (`ver_leakage_classification`).
 - Use directional words that match the sign of the figure ("rose" only for a positive change).
 - Recommendations: imperative and specific, tied to findings, with confidence, effort and whether a Chartered
   Accountant should review. No investment products, named lenders, tax positions or filing actions.

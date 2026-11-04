@@ -35,6 +35,8 @@ from fa_metrics import Engine, signals  # noqa: E402
 from fa_reconcile import run_reconciliation  # noqa: E402
 from fa_report import render_report  # noqa: E402
 import fa_reflex  # noqa: E402
+import fa_render  # noqa: E402
+import fa_xlsx  # noqa: E402
 import fa_verify  # noqa: E402
 
 DEFAULT_MATERIALITY = {"absolute_floor_inr": "25000", "relative_threshold": "0.10", "revenue_share_floor": "0.005"}
@@ -74,7 +76,7 @@ def validate_config(cfg):
 
 
 def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple", approvals_path=None, reflex_round=1,
-        reflex=True):
+        reflex=True, formats=("md", "html", "pdf", "xlsx"), excel_libreoffice=True):
     cfg = read_json(config_path)
     cfg.setdefault("currency", "INR")
     cfg.setdefault("reporting_basis", "accrual")
@@ -128,15 +130,24 @@ def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple", ap
     with open(os.path.join(out_dir, "report_draft.md"), "w", encoding="utf-8") as fh:
         fh.write(draft)
     write_json(os.path.join(out_dir, "render_manifest.json"), manifest)
-    ver = fa_verify.verify(out_dir, input_dir)
+    outputs = {}
+    for stale in ("dashboard.xlsx", "dashboard_audit.json", "report.html", "report.pdf"):
+        if os.path.exists(os.path.join(out_dir, stale)):
+            os.remove(os.path.join(out_dir, stale))
+    if "xlsx" in formats:
+        path, msg = fa_xlsx.build(out_dir)
+        outputs["xlsx"] = path or msg
+    ver = fa_verify.verify(out_dir, input_dir, excel_libreoffice)
     write_json(os.path.join(out_dir, "verification.json"), ver)
+    counts = fa_verify.independent_counts(issues, recon, reg.records)
+    overall = fa_verify.status_overall(counts, ver["outcome"])
     if ver["outcome"] == "failed":
-        stamp = ("**VERIFICATION FAILED — do not rely on these figures.** "
-                 + "; ".join(f"{c['id']}" for c in ver["checks"] if c["status"] == "failed"))
+        stamp = ("VERIFICATION FAILED — do not rely on these figures (failed: "
+                 + ", ".join(c["id"] for c in ver["checks"] if c["status"] == "failed") + ").")
     else:
-        stamp = (f"Verified by independent recomputation on {now_ist()} (IST): {ver['passed_checks']}/"
-                 f"{ver['total_checks']} checks passed ({ver['outcome'].replace('_', ' ')}).")
-    final = draft.replace("VERIFICATION_STATUS_PLACEHOLDER", stamp, 1)
+        stamp = (f"independently recomputed on {now_ist()} (IST), {ver['passed_checks']}/{ver['total_checks']} "
+                 f"verification checks passed ({ver['outcome'].replace('_', ' ')}).")
+    final = draft.replace("STATUS_OVERALL_PLACEHOLDER", overall, 1).replace("VERIFICATION_STATUS_PLACEHOLDER", stamp, 1)
     final += "\n## Verification\n\n| Check | Status | Details |\n|---|---|---|\n"
     for c in ver["checks"]:
         det = c["details"] if isinstance(c["details"], str) else "; ".join(map(str, c["details"]))[:300]
@@ -144,6 +155,10 @@ def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple", ap
     final += f"\nDraft SHA-256: {ver['draft_sha256']}\n"
     with open(os.path.join(out_dir, "report.md"), "w", encoding="utf-8") as fh:
         fh.write(final)
+    if "html" in formats or "pdf" in formats:
+        rr = fa_render.render(out_dir, pdf="pdf" in formats)
+        outputs["html"] = rr["html"]
+        outputs["pdf"] = rr["pdf"] or rr["pdf_status"]
     write_json(os.path.join(out_dir, "run_manifest.json"), {
         "run_id": run_id, "spec_version": sv, "toolkit_version": TOOLKIT_VERSION, "started_at": started,
         "finished_at": now_ist(), "input_dir": os.path.abspath(input_dir), "depth": depth,
@@ -156,6 +171,7 @@ def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple", ap
         "calculation_count": len(reg.records), "verification_outcome": ver["outcome"],
         "outputs": {n: sha256_file(os.path.join(out_dir, n)) for n in ("report.md", "calc_register.json",
                                                                         "issues.json")},
+        "status": overall, "status_counts": counts, "deliverables": outputs,
         "outcome": "completed" if ver["outcome"] != "failed" else "partial"})
     counts = {}
     for r in reg.records:
@@ -171,10 +187,13 @@ def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple", ap
               f"{len(rx['suppressed'])} suppressed, {len(rx['deferred'])} deferred, {len(rx['data_requests'])} data "
               f"request(s), {pend} approval(s) pending, {len(rx['charts'])} chart(s)")
     print(f"verification: {ver['outcome']} ({ver['passed_checks']}/{ver['total_checks']})")
+    print(f"status: {overall}")
     for c in ver["checks"]:
         if c["status"] != "passed":
             print(f"  {c['status'].upper()} {c['id']}: {c['details']}")
     print(f"report: {os.path.join(os.path.abspath(out_dir), 'report.md')}")
+    for k, val in outputs.items():
+        print(f"{k}: {val}")
     return 3 if ver["outcome"] == "failed" else 0
 
 
@@ -188,8 +207,13 @@ def main(argv=None):
     ap.add_argument("--approvals", help="approvals.json with approved/rejected reflex approval_ids")
     ap.add_argument("--reflex-round", type=int, default=1, help="increment after fulfilling reflex data requests")
     ap.add_argument("--no-reflex", action="store_true", help="skip the Proactive Financial Reflex Engine")
+    ap.add_argument("--formats", default="md,html,pdf,xlsx",
+                    help="comma list of md,html,pdf,xlsx (pdf needs headless Chromium, xlsx needs openpyxl)")
+    ap.add_argument("--no-libreoffice-check", action="store_true",
+                    help="skip the LibreOffice cross-check of dashboard formulas")
     a = ap.parse_args(argv)
-    return run(a.input_dir, a.config, a.out, a.narrative, a.depth, a.approvals, a.reflex_round, not a.no_reflex)
+    return run(a.input_dir, a.config, a.out, a.narrative, a.depth, a.approvals, a.reflex_round, not a.no_reflex,
+               tuple(x.strip() for x in a.formats.split(",")), not a.no_libreoffice_check)
 
 
 if __name__ == "__main__":

@@ -288,12 +288,19 @@ class Reflex:
             if amt <= Decimal("1.00"):
                 continue
             sv = self.rec("settlement_variance")
-            out.append(self.trig("rx_settlement_shortfall", f"settlement:{rec['settlement_id']}",
-                                 f"Settlement {rec['settlement_id']} not located in bank data",
-                                 self.base("rx_settlement_shortfall"), amt,
+            window = int(self.run_cfg.get("reconciliation", {}).get("settlement_to_bank_days", 5))
+            sdate = rec.get("settlement_date")
+            days = (self.as_of - (sdate if isinstance(sdate, _dt.date) else _dt.date.fromisoformat(str(sdate)))).days \
+                if sdate else None
+            timing = rec["match_status"] == "unmatched" and days is not None and days <= window
+            nature = "timing" if timing else "unexplained"
+            title = (f"Settlement {rec['settlement_id']} not yet in bank data (within the {window}-day timing window)"
+                     if timing else f"Settlement {rec['settlement_id']}: unexplained shortfall beyond the timing window")
+            out.append(self.trig("rx_settlement_shortfall", f"settlement:{rec['settlement_id']}", title,
+                                 "low" if timing else self.base("rx_settlement_shortfall"), amt,
                                  self.conf(sv) if sv else CONFIDENCE["partial"],
                                  [sv["calc_id"] if sv else None, "check:ai_settlement_reconciliation"],
-                                 {"record": rec}))
+                                 {"record": rec, "nature": nature, "window": window, "days": days}))
         return out
 
     def r_bank_book(self, p):
@@ -420,9 +427,9 @@ class Reflex:
                                  [sv["calc_id"] if sv else None], {"key": "probable_settlement_matches",
                                                                    "records": probable}))
         npf = self.rec("net_profit")
-        if npf and npf["readiness"] == "partial" and any("Tax provision" in w for w in npf["warnings"]):
+        if npf and npf["readiness"] == "needs_data" and any("No tax provision" in w for w in npf["warnings"]):
             out.append(self.trig("rx_partial_metric_upgrade", "data_gap:tax_provision",
-                                 "Net profit is before an unbooked tax provision",
+                                 "Profit after tax not stated: no tax provision booked",
                                  self.base("rx_partial_metric_upgrade"), None, CONFIDENCE["ready"],
                                  [npf["calc_id"]], {"key": "tax_provision"}))
         cash = self.rec("cash_balance")
@@ -557,11 +564,23 @@ class Reflex:
         inv["actions"].append(entry)
         return entry
 
-    def insight(self, inv, text, refs):
-        inv["insights"].append({"text": text, "refs": [r for r in refs if r], "label": "auto-generated"})
+    def insight(self, inv, text, refs, evidence_class="fact"):
+        refs = [r for r in refs if r]
+        if evidence_class == "fact":
+            # a fact that relies on a partial figure is not a verified finding (report_generation evidence_classes)
+            for ref in refs:
+                rec = next((x for x in self.reg.records if x["calc_id"] == ref), None)
+                if rec is None and ref.startswith("metric:"):
+                    mid, _, dims = ref[7:].partition("[")
+                    dd = dict(p.split("=", 1) for p in dims.rstrip("]").split(",") if "=" in p)
+                    rec = self.rec(mid, **dd)
+                if rec is not None and rec["readiness"] != "ready":
+                    evidence_class = "fact_with_limitations"
+        inv["insights"].append({"text": text, "refs": refs, "label": "auto-generated",
+                                "evidence_class": evidence_class})
 
     def recommend(self, inv, rule_id, title, rationale, impact_text, impact_calc, effort, refs, approval_id=None,
-                  review=False, confidence=None):
+                  review=False, confidence=None, impact_basis="measured"):
         amt = None
         if impact_calc:
             r = next((x for x in self.reg.records if x["calc_id"] == impact_calc), None)
@@ -569,7 +588,7 @@ class Reflex:
         inv["recommendations"].append({"rule_id": rule_id, "title": title, "rationale": rationale,
                                        "impact": impact_text, "impact_calc_id": impact_calc, "impact_amount": amt,
                                        "effort": effort, "refs": [r for r in refs if r], "approval_id": approval_id,
-                                       "professional_review_needed": review,
+                                       "professional_review_needed": review, "impact_basis": impact_basis,
                                        "confidence_value": confidence if confidence is not None
                                        else inv["confidence"]})
 
@@ -582,10 +601,10 @@ class Reflex:
             "the dataset named in the issue", {"issues": t["facts"]["issue_ids"]},
             f"Critical issues {ids} block dependent metrics; a corrected export is needed."))
         self.insight(inv, f"Critical data issues ({ids}) block {len(blocked)} metric(s); figures that depend on them "
-                          f"are withheld rather than estimated.", t["evidence"])
+                          f"are withheld rather than estimated.", t["evidence"], "data_gap")
         self.recommend(inv, t["rule_id"], "Re-export the affected source data and re-run the analysis",
                        f"Critical issues {ids} prevent reliable figures.", "Unblocks the withheld metrics.", None,
-                       "low", t["evidence"], confidence=CONFIDENCE["ready"])
+                       "low", t["evidence"], confidence=CONFIDENCE["ready"], impact_basis="none")
 
     def pb_rx_overdue_receivables(self, inv, t, c):
         f = t["facts"]
@@ -602,10 +621,13 @@ class Reflex:
                                        {"threshold_days": thr})
             c["by_cust"] = {}
             for cid in sorted(f["by_customer"], key=lambda k: (-f["by_customer"][k], k)):
+                lines = [r["_line"] for r in self.rows("ar_open_items") if r.get("customer_id") == cid and
+                         (r.get("due_date") or r.get("invoice_date")) and
+                         (self.as_of - (r.get("due_date") or r.get("invoice_date"))).days > f["threshold"]]
                 c["by_cust"][cid] = self.add_calc("rx_ar_overdue_by_customer", f["by_customer"][cid], "money",
                                                   "rx_ar_overdue_total grouped by customer", kinds,
                                                   {"customer_id": cid, "threshold_days": thr},
-                                                  {"name": f["names"][cid]})
+                                                  {"name": f["names"][cid], "source_rows": lines})
             return {"calc_ids": [c["over"], c["share"]] + list(c["by_cust"].values())}
         self.act(inv, "compute_overdue_by_customer", "local_compute", compute)
 
@@ -638,7 +660,8 @@ class Reflex:
                                               "cash_balance + rx_ar_overdue_total", ["bank_transactions",
                                                                                      "ar_open_items"],
                                               params={"assumption": "Overdue receivables collected in full; "
-                                                                    "nothing else changes."}, scenario=True)
+                                                                    "nothing else changes.",
+                                                      "evidence_class": "upper_bound"}, scenario=True)
                 ids.append(c["scn_cash"])
             tbp = tb_periods(self.data).get(self.cur["label"])
             denom = D((dso_rec or {}).get("parameters", {}).get("denominator") or 0) if dso_rec else ZERO
@@ -689,18 +712,22 @@ class Reflex:
             if top and c["by_cust"].get(top):
                 txt += f"; the largest amount is with {name} ({{{{calc:{c['by_cust'][top]}}}}})"
                 refs.append(c["by_cust"][top])
+            self.insight(inv, txt + ".", refs, "fact")
+            est, erefs = [], []
             if c.get("scn_cash"):
-                txt += f". Collecting it would raise cash to {{{{calc:{c['scn_cash']}}}}}"
-                refs.append(c["scn_cash"])
+                est.append(f"collecting it in full would raise cash to {{{{calc:{c['scn_cash']}}}}}")
+                erefs.append(c["scn_cash"])
             if c.get("scn_dso"):
-                txt += f" and bring DSO to {{{{calc:{c['scn_dso']}}}}} from {{{{metric:dso}}}}"
-                refs += [c["scn_dso"], "metric:dso"]
-            self.insight(inv, txt + ".", refs)
+                est.append(f"DSO would be {{{{calc:{c['scn_dso']}}}}} instead of {{{{metric:dso}}}}")
+                erefs += [c["scn_dso"], "metric:dso"]
+            if est:
+                self.insight(inv, "Scenario (receivables): " + "; ".join(est) + ".", erefs, "estimate")
             self.recommend(inv, t["rule_id"], f"Collect receivables more than {thr} days past due"
                            + (f", starting with {name}" if name else ""),
                            f"They total {{{{calc:{c['over']}}}}} and older balances are harder to recover.",
-                           f"Up to {{{{calc:{c['over']}}}}} of cash.", c["over"], "low",
-                           [c["over"]] + ([c["by_cust"][top]] if top else []), approval_id=apr["approval_id"])
+                           f"Up to {{{{calc:{c['over']}}}}} of cash if collected in full (upper bound).", c["over"], "low",
+                           [c["over"]] + ([c["by_cust"][top]] if top else []), approval_id=apr["approval_id"],
+                           impact_basis="upper_bound")
 
     def _dso_release(self, c):
         dso_rec = self.rec("dso")
@@ -755,7 +782,8 @@ class Reflex:
             c["open_ar"] = self.add_calc("rx_customer_open_receivables",
                                          sum((r.get("amount_outstanding") or ZERO for r in rows), ZERO), "money",
                                          "sum(amount_outstanding) for the customer", ["ar_open_items"],
-                                         {"customer_id": cid}, {"name": name})
+                                         {"customer_id": cid}, {"name": name,
+                                                                "source_rows": [r["_line"] for r in rows]})
             return {"calc_ids": [c["open_ar"]]}
         self.act(inv, "compute_top_customer_open_receivables", "local_compute", open_ar)
 
@@ -778,7 +806,8 @@ class Reflex:
             self.recommend(inv, t["rule_id"], f"Review credit terms and dependence on {name}",
                            f"{name} is {{{{calc:{share_id}}}}} of sales; a delay or loss would hit revenue and cash.",
                            (f"Exposure in open receivables {{{{calc:{c['open_ar']}}}}}." if c.get("open_ar")
-                            else "Reduces concentration risk."), c.get("open_ar"), "high", refs)
+                            else "Reduces concentration risk."), c.get("open_ar"), "high", refs,
+                           impact_basis="exposure")
 
     def pb_rx_settlement_shortfall(self, inv, t, c):
         rec = t["facts"]["record"]
@@ -792,7 +821,9 @@ class Reflex:
                                                 "expected net not located in bank credits", ["settlements",
                                                                                              "bank_transactions"],
                                                 {"settlement_id": sid}, {"provider": rec.get("provider"),
-                                                                         "match_status": rec["match_status"]})
+                                                                         "match_status": rec["match_status"],
+                                                                         "nature": t["facts"]["nature"],
+                                                                         "source_rows": [srow["_line"]] if srow else []})
             ids = [c["unlocated"][sid]]
             if srow.get("settlement_date"):
                 c.setdefault("days", {})[sid] = self.add_calc(
@@ -823,7 +854,8 @@ class Reflex:
             c["scn_recovery"] = self.add_calc("scn_settlement_recovery_cash", cash + total, "money",
                                               "cash_balance + sum(unlocated settlements)",
                                               ["bank_transactions", "settlements"], scenario=True,
-                                              params={"assumption": "All unlocated settlements are received."})
+                                              params={"assumption": "All unlocated settlements are received.",
+                                                      "evidence_class": "upper_bound"})
             return {"calc_ids": [c["scn_recovery"]]}
         self.act(inv, "scenario_settlement_recovery", "scenario", scen)
 
@@ -831,21 +863,28 @@ class Reflex:
             comp = c.get("components") or {}
             if not comp:
                 return {"status": "skipped"}
-            order = [("Gross", "gross_amount", 1), ("Fees", "fees", -1), ("GST on fees", "tax_on_fees", -1),
-                     ("Refunds", "refunds", -1), ("Withholdings", "withholdings", -1),
-                     ("Adjustments", "adjustments", 1)]
+            order = [("Gross", "gross_amount", 1), ("Fees (cost)", "fees", -1),
+                     ("GST on fees (credit)", "tax_on_fees", -1), ("Refunds (reversal)", "refunds", -1),
+                     ("TCS/TDS (tax credit)", "withholdings", -1), ("Adjustments", "adjustments", 1)]
+            nature = {"gross_amount": "revenue", "fees": "selling_cost", "tax_on_fees": "recoverable_tax_credit",
+                      "refunds": "revenue_reversal", "withholdings": "recoverable_tax_credit",
+                      "adjustments": "requires_explanation", "net_amount": "expected_net"}
             series = []
             for lbl, key, sign in order:
                 r = next(x for x in self.reg.records if x["calc_id"] == comp[key])
                 series.append({"label": lbl, "calc_id": comp[key], "value": format(Decimal(r["value"]) * sign, "f"),
-                               "sign": sign, "kind": "total" if key == "gross_amount" else "step"})
+                               "sign": sign, "kind": "total" if key == "gross_amount" else "step",
+                               "nature": nature[key], "colour": "#7A8CA3" if nature[key] in
+                               ("recoverable_tax_credit", "revenue_reversal") else None})
             series[0]["kind"] = "total"
             net = next(x for x in self.reg.records if x["calc_id"] == comp["net_amount"])
             series.append({"label": "Expected net", "calc_id": comp["net_amount"], "value": net["value"], "sign": 1,
-                           "kind": "total"})
+                           "kind": "total", "nature": "expected_net"})
             return {"chart_ids": [self.chart("rx-settlement-waterfall", "waterfall_bridge",
-                                             "Settlements: gross to expected net", "Settlements dated in the period",
-                                             series, "Waterfall from gross settlement value to expected net.")]}
+                                             "Settlements: gross to expected net",
+                                             "Grey-blue steps are recoverable tax credits or reversals, not losses",
+                                             series, "Waterfall from gross settlement value to expected net; GST on "
+                                                     "fees and TCS/TDS are recoverable credits.")]}
         self.act(inv, "chart_settlement_waterfall", "chart", chart)
         after = srow.get("settlement_date") or self.as_of
         self.act(inv, "connector_read_bank_after_period_end", "connector_read", lambda: self.data_request(
@@ -869,19 +908,27 @@ class Reflex:
                               "Regards,\n"))} if apr["status"] == "approved_prepared" else {})})
         u = c.get("unlocated", {}).get(sid)
         if u:
+            nature, window = t["facts"]["nature"], t["facts"]["window"]
             txt = f"Settlement {sid} from {rec.get('provider')} with expected net {{{{calc:{u}}}}} was not located in " \
                   f"the bank data provided"
             refs = [u]
             if c.get("days", {}).get(sid):
                 txt += f" ({{{{calc:{c['days'][sid]}}}}} after the settlement date at period end)"
                 refs.append(c["days"][sid])
+            if nature == "timing":
+                txt += f". This is within the {window}-day timing window, so it is treated as a timing difference " \
+                       "(possibly in transit), not a loss; later bank lines are requested."
+            else:
+                txt += f". It is beyond the {window}-day timing window: an unexplained shortfall that may be leakage " \
+                       "and needs review; it is not a confirmed loss."
+            self.insight(inv, txt, refs, "exception")
             if c.get("scn_recovery"):
-                txt += f"; if all unlocated settlements arrive, cash would be {{{{calc:{c['scn_recovery']}}}}}"
-                refs.append(c["scn_recovery"])
-            self.insight(inv, txt + ". It may be in transit — later bank lines are requested.", refs)
+                self.insight(inv, f"If all unlocated settlements are received, cash would be "
+                                  f"{{{{calc:{c['scn_recovery']}}}}} (scenario).", [c["scn_recovery"]], "estimate")
             self.recommend(inv, t["rule_id"], f"Confirm receipt of settlement {sid} or raise a query with "
                            f"{rec.get('provider')}", f"Expected net {{{{calc:{u}}}}} is not in the bank data.",
-                           f"Up to {{{{calc:{u}}}}} of cash.", u, "low", [u], approval_id=apr["approval_id"])
+                           f"Up to {{{{calc:{u}}}}} of cash if it is still outstanding (upper bound).", u, "low", [u],
+                           approval_id=apr["approval_id"], impact_basis="upper_bound")
 
     def _all_unlocated(self):
         rule = next((x for x in self.recon.get("rules", []) if x["rule_id"] == "rec_settlement_to_bank"), None)
@@ -909,11 +956,13 @@ class Reflex:
         if c.get("bb"):
             self.insight(inv, f"The bank statement differs from the book balance by {{{{calc:{c['bb']}}}}} at period "
                               "end; book-side bank ledger lines are requested to explain it.", [c["bb"],
-                                                                                              "CON-BANK-BOOK"])
+                                                                                              "CON-BANK-BOOK"],
+                         "exception")
             self.recommend(inv, t["rule_id"], "Prepare the period-end bank reconciliation statement",
                            f"Bank and book differ by {{{{calc:{c['bb']}}}}}.",
                            "Confirms the cash figure used in this report.", c["bb"], "low", [c["bb"],
-                                                                                             "CON-BANK-BOOK"])
+                                                                                             "CON-BANK-BOOK"],
+                           impact_basis="measured")
 
     def pb_rx_margin_decline(self, inv, t, c):
         m = t["facts"]["metric"]
@@ -933,7 +982,8 @@ class Reflex:
             c["scn_price"] = self.add_calc("scn_margin_restoration_price_increase", cogs / (1 - gm0) / nr - 1,
                                            "percent", "cogs / (1 - comparison gross_margin) / net_revenue - 1",
                                            ["trial_balance"], scenario=True,
-                                           params={"assumption": "Volumes and costs unchanged."})
+                                           params={"assumption": "Volumes and costs unchanged.",
+                                                   "evidence_class": "scenario"})
             return {"calc_ids": [c["scn_price"]]}
         self.act(inv, "scenario_margin_restoration", "scenario", scen)
 
@@ -954,13 +1004,15 @@ class Reflex:
             txt = f"{m.replace('_', ' ').capitalize()} changed by {{{{calc:{c['mchg'][m]}}}}} against the comparison " \
                   "period"
             refs = [c["mchg"][m]]
+            self.insight(inv, txt + ".", refs, "fact")
             if m == "gross_margin" and c.get("scn_price"):
-                txt += f"; restoring it with prices alone would need an increase of {{{{calc:{c['scn_price']}}}}}"
+                self.insight(inv, f"Scenario (pricing): restoring gross margin with prices alone, volumes and costs "
+                                  f"unchanged, would need an increase of {{{{calc:{c['scn_price']}}}}}.",
+                             [c["scn_price"]], "estimate")
                 refs.append(c["scn_price"])
-            self.insight(inv, txt + ".", refs)
             self.recommend(inv, t["rule_id"], "Review pricing, discounts and input costs to recover the margin",
-                           f"Margin change {{{{calc:{c['mchg'][m]}}}}}.", "Restores profit lost to the margin decline.",
-                           None, "high", refs)
+                           f"Margin change {{{{calc:{c['mchg'][m]}}}}}.", "Recovers margin lost against the comparison "
+                           "period.", None, "high", refs, impact_basis="none")
 
     def pb_rx_cost_category_spike(self, inv, t, c):
         f = t["facts"]
@@ -982,7 +1034,8 @@ class Reflex:
             c.setdefault("save", {})[cls] = self.add_calc(
                 "scn_cost_normalisation_saving", a - b * (1 + rg), "money", "actual_k[P] - actual_k[C] * (1 + "
                 "revenue_growth)", ["trial_balance"], {"account_class": cls}, scenario=True,
-                params={"assumption": "The category grows only in line with revenue."})
+                params={"assumption": "Indicative gap between actual growth and revenue-proportional growth; not "
+                                      "evidence that any reduction is achievable.", "evidence_class": "indicative"})
             return {"calc_ids": [c["save"][cls]]}
         self.act(inv, "scenario_cost_normalisation", "scenario", scen)
 
@@ -1011,15 +1064,21 @@ class Reflex:
             txt = f"{lbl.capitalize()} grew {{{{calc:{c['gap'][cls]}}}}} faster than revenue (increase " \
                   f"{{{{metric:cost_category_variance[account_class={cls},measure=amount]}}}})"
             refs = [c["gap"][cls], f"metric:cost_category_variance[account_class={cls},measure=amount]"]
+            self.insight(inv, txt + ".", refs, "fact")
             if c.get("save", {}).get(cls):
-                txt += f"; growing in line with revenue would have cost {{{{calc:{c['save'][cls]}}}}} less"
-                refs.append(c["save"][cls])
-            self.insight(inv, txt + ".", refs)
+                self.insight(inv, f"Indicative only: {{{{calc:{c['save'][cls]}}}}} of the {lbl} increase is above what "
+                                  "revenue growth alone would explain. This is not evidence that the amount can be "
+                                  "reduced; vendor or contract evidence is needed.", [c["save"][cls]], "estimate")
+                self.insight(inv, f"Hypothesis: the faster growth of {lbl} may reflect a rate or contract change rather "
+                                  "than volume; vendor bills would confirm or reject this.",
+                             [c["gap"][cls]], "hypothesis")
             self.recommend(inv, t["rule_id"], f"Review {lbl} spend and contracts",
                            f"{lbl.capitalize()} grew {{{{calc:{c['gap'][cls]}}}}} faster than revenue.",
-                           (f"Potential saving {{{{calc:{c['save'][cls]}}}}} per period." if c.get("save", {}).get(cls)
-                            else "Brings the category back in line with revenue."),
-                           c.get("save", {}).get(cls), "medium", refs)
+                           (f"Indicative gap {{{{calc:{c['save'][cls]}}}}} above revenue-proportional growth; confirm "
+                            "with vendor or contract evidence before treating any amount as recoverable."
+                            if c.get("save", {}).get(cls) else "Brings the category back in line with revenue."),
+                           c.get("save", {}).get(cls), "medium",
+                           refs + ([c["save"][cls]] if c.get("save", {}).get(cls) else []), impact_basis="indicative")
 
     def pb_rx_budget_overrun(self, inv, t, c):
         cls = t["facts"]["account_class"]
@@ -1055,8 +1114,8 @@ class Reflex:
             self.recommend(inv, t["rule_id"], ("Close the revenue gap to budget" if revenue else
                                                f"Bring {lbl} back within budget"),
                            f"Unfavourable by {{{{calc:{c['short'][cls]}}}}}.",
-                           f"{{{{calc:{c['short'][cls]}}}}} against plan.", c["short"][cls], "medium",
-                           [c["short"][cls]])
+                           f"{{{{calc:{c['short'][cls]}}}}} against plan (measured).", c["short"][cls], "medium",
+                           [c["short"][cls]], impact_basis="measured")
 
     def pb_rx_msme_payables_timing(self, inv, t, c):
         f = t["facts"]
@@ -1070,7 +1129,8 @@ class Reflex:
                 ids.append(self.add_calc("rx_msme_overdue_by_supplier", f["by_supplier"][sid], "money",
                                          "rx_msme_overdue_total grouped by supplier", ["ap_open_items"],
                                          {"supplier_id": sid, "max_days": str(f["max_days"])},
-                                         {"name": f["names"][sid]}))
+                                         {"name": f["names"][sid], "source_rows": [r["_line"] for r in f["bills"]
+                                                                                    if r.get("supplier_id") == sid]}))
             c["msme_days"] = self.add_calc("rx_msme_max_days", Decimal(f["max_age"]), "days", "max(as_of - bill_date)",
                                            ["ap_open_items"], {"max_days": str(f["max_days"])})
             return {"calc_ids": ids + [c["msme_days"]]}
@@ -1083,7 +1143,8 @@ class Reflex:
             c["scn_msme"] = self.add_calc("scn_msme_clearance_cash_after", cash - t["amount"], "money",
                                           "cash_balance - rx_msme_overdue_total", ["bank_transactions",
                                                                                    "ap_open_items"], scenario=True,
-                                          params={"assumption": "All flagged MSME bills paid now."})
+                                          params={"assumption": "All flagged MSME bills paid now.",
+                                                  "evidence_class": "scenario"})
             return {"calc_ids": [c["scn_msme"]]}
         self.act(inv, "scenario_msme_clearance", "scenario", scen)
         apr = self.approval_request(inv, t["rule_id"], "financial_prepare_payment_proposal", "financial_write",
@@ -1111,14 +1172,15 @@ class Reflex:
             txt = f"Bills of {{{{calc:{c['msme_total']}}}}} from suppliers classified micro/small are outstanding " \
                   f"beyond {f['max_days']} days (oldest {{{{calc:{c['msme_days']}}}}})"
             refs = [c["msme_total"], c["msme_days"], "check:ai_msme_payables_timing"]
+            self.insight(inv, txt + ".", refs, "fact")
             if c.get("scn_msme"):
-                txt += f"; paying them now would leave cash at {{{{calc:{c['scn_msme']}}}}}"
+                self.insight(inv, f"Scenario (MSME bills): paying them now would leave cash at "
+                                  f"{{{{calc:{c['scn_msme']}}}}}.", [c["scn_msme"]], "estimate")
                 refs.append(c["scn_msme"])
-            self.insight(inv, txt + ".", refs)
             self.recommend(inv, t["rule_id"], "Review and schedule payment of MSME supplier bills beyond 45 days",
                            f"{{{{calc:{c['msme_total']}}}}} is outstanding beyond the period; payment timing can "
                            "affect tax deductions.", f"Exposure {{{{calc:{c['msme_total']}}}}}.", c["msme_total"],
-                           "low", refs, approval_id=apr["approval_id"], review=True)
+                           "low", refs, approval_id=apr["approval_id"], review=True, impact_basis="exposure")
 
     def pb_rx_liquidity_pressure(self, inv, t, c):
         def compute():
@@ -1146,12 +1208,12 @@ class Reflex:
         if c.get("cov"):
             txt += f"; cash plus receipts due in 30 days cover near-term payables {{{{calc:{c['cov']}}}}} times"
             refs.append(c["cov"])
-        self.insight(inv, txt + ".", refs + ["metric:quick_ratio"])
+        self.insight(inv, txt + ".", refs + ["metric:quick_ratio"], "fact")
         if c.get("scn_release"):
             self.recommend(inv, t["rule_id"], "Protect near-term liquidity: accelerate collections and phase payments",
-                           "Near-term cover is limited.", f"Reducing DSO by 10 days would release "
+                           "Near-term cover is limited.", f"Scenario: reducing DSO by 10 days would release "
                            f"{{{{calc:{c['scn_release']}}}}}.", c["scn_release"], "medium",
-                           refs + [c["scn_release"]])
+                           refs + [c["scn_release"]], impact_basis="scenario")
 
     def pb_rx_partial_metric_upgrade(self, inv, t, c):
         key = t["facts"]["key"]
@@ -1161,7 +1223,7 @@ class Reflex:
                 "run_config.json: credit_purchases_incl_tax", {"period": self.cur["label"]},
                 "Makes DPO and the cash conversion cycle ready instead of partial."))
             self.insight(inv, "DPO uses COGS as its denominator; a purchase register would make DPO and the cash "
-                              "conversion cycle exact.", t["evidence"] + ["metric:dpo"])
+                              "conversion cycle exact.", t["evidence"] + ["metric:dpo"], "data_gap")
         elif key == "probable_settlement_matches":
             ids = ", ".join(r["settlement_id"] for r in t["facts"]["records"])
             apr = self.approval_request(inv, t["rule_id"], "customer_confirm_probable_matches", "customer_confirmation",
@@ -1173,20 +1235,21 @@ class Reflex:
             self.act(inv, "customer_confirm_probable_matches", "customer_confirmation",
                      lambda: {"status": apr["status"], "approval_id": apr["approval_id"]})
             self.insight(inv, f"Settlement match(es) {ids} are probable, not confirmed; your confirmation would make "
-                              "the settlement variance ready.", t["evidence"] + ["metric:settlement_variance"])
+                              "the settlement variance ready.", t["evidence"] + ["metric:settlement_variance"], "data_gap")
         elif key == "tax_provision":
             self.act(inv, "connector_read_missing_input", "connector_read", lambda: self.data_request(
                 inv, t["rule_id"], "accounting system or Chartered Accountant", "tax provision for the period",
                 "trial_balance.csv (current_tax / deferred_tax lines)", {"period": self.cur["label"]},
                 "Net profit is before tax because no provision is booked; tax is never estimated."))
-            self.insight(inv, "Net profit is shown before an unbooked tax provision.", t["evidence"])
+            self.insight(inv, "Profit after tax is not stated because no tax provision is booked; profit before tax is "
+                              "shown under its own label.", t["evidence"], "data_gap")
         elif key == "bank_statement":
             self.act(inv, "connector_read_missing_input", "connector_read", lambda: self.data_request(
                 inv, t["rule_id"], "bank statement or authorised bank connector", "bank_transactions",
                 "bank_transactions.csv", {"period": self.cur["label"]},
                 "Cash is a book balance; a statement verifies it."))
             self.insight(inv, "The cash figure is a book balance not yet verified against a bank statement.",
-                         t["evidence"])
+                         t["evidence"], "data_gap")
 
     # ------------------------------------------------------------------ orchestration
     def load_acknowledged(self):
@@ -1274,6 +1337,8 @@ class Reflex:
         months = self.days / Decimal("30.4375")
         monthly = (opex / months) if opex else None
         amt = rec["impact_amount"]
+        if rec.get("impact_basis") in ("indicative", "none"):
+            amt = None  # indicative figures never drive priority as if they were achievable amounts
         if amt is not None and monthly and amt >= D(pr["impact_high_share_of_monthly_opex"]) * monthly:
             impact = "high"
         elif amt is not None and amt >= self.floor:

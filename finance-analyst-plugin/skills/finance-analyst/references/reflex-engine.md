@@ -1,6 +1,6 @@
 # Proactive Financial Reflex Engine — operating guide
 
-Spec: `finance-analyst.yaml` section `reflex_engine` (v1.2.0) and workflow stage `proactive_reflex`.
+Spec: `finance-analyst.yaml` section `reflex_engine` (v1.2.0; evidence classes and indicative impact in v1.3.0) and workflow stage `proactive_reflex`.
 Code: `scripts/fa_reflex.py` (engine), `scripts/fa_charts.py` (SVG charts). It runs automatically inside
 `fa_run.py` after metrics are calculated, within the current task only — there is no scheduler, monitor, server or
 background service.
@@ -59,6 +59,13 @@ approved items.
    the ids to `run_config.reconciliation.customer_confirmed_matches` and re-running.
 4. **Narrative** — adopt, edit or drop the auto-generated insights and recommendations in `narrative.json`
    (same placeholder rules). Do not restate reflex figures as typed numbers.
+5. **Evidence classes (spec 1.3.0)** — every reflex insight carries `evidence_class`: `fact`,
+   `fact_with_limitations` (a cited figure is partial), `estimate` (scenario or indicative figure) or
+   `hypothesis` (with how to confirm it). Keep the class when adopting an insight. Settlement shortfalls are
+   split: within `reconciliation.settlement_to_bank_days` they are timing differences (possibly in transit, low
+   severity, not a loss); beyond it they are unexplained shortfalls that "may be leakage" — never a confirmed loss.
+   GST on fees and TCS/TDS are recoverable tax credits and refunds are revenue reversals (grey-blue in the
+   waterfall), not leakage. Cost-normalisation gaps are indicative (`impact_basis: indicative`), not savings.
 
 ## Configuration (`run_config.json` → `"reflex": {...}`)
 

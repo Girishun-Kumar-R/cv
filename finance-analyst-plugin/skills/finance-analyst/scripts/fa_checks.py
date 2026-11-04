@@ -117,7 +117,18 @@ def _tb_checks(data, config, log):
             log.add("dq_period_incompatibility", "high", "trial_balance",
                     f"Period '{label}' dates in the trial balance ({tbp['start']} to {tbp['end']}) differ from the "
                     f"configuration ({p['start']} to {p['end']}).")
+    main_labels = {(config.get("current_period") or {}).get("label"), (config.get("comparison_period") or {}).get("label")}
     for label, p in periods.items():
+        before = len(log.items)
+        _tb_period_checks(label, p, log)
+        if label not in main_labels:
+            for issue in log.items[before:]:
+                issue["blocks"] = ["tb_months"]
+                issue["description"] = f"[sub-period] {issue['description']}"
+
+
+def _tb_period_checks(label, p, log):
+    if True:
         rows = p["rows"]
         bad_class = [r for r in rows if r.get("account_class") and r["account_class"] not in ALL_CLASSES]
         if bad_class:
@@ -179,6 +190,68 @@ def _tb_checks(data, config, log):
                     f"revenue/purchases; please confirm the mapping.", records=len(tax_named) + len(fin_named),
                     amount=amt, evidence=[f"{r['account_name']} -> {r['account_class']}" for r in
                                           (tax_named + fin_named)[:10]])
+
+
+def _rollup_checks(data, config, log):
+    """ai_period_rollup: sub-period (monthly/quarterly) trial balances must roll up to the period total."""
+    import datetime as _dt
+    periods = tb_periods(data)
+    cur = config.get("current_period") or {}
+    tot = periods.get(cur.get("label"))
+    if not tot:
+        return
+    s, e = _dt.date.fromisoformat(cur["start"]), _dt.date.fromisoformat(cur["end"])
+    skip = {cur["label"], (config.get("comparison_period") or {}).get("label")}
+    wanted = config.get("sub_periods")
+    subs = sorted((p for lbl, p in periods.items() if lbl not in skip and p["start"] and p["end"]
+                   and s <= p["start"] and p["end"] <= e and (wanted is None or lbl in wanted)),
+                  key=lambda p: p["start"])
+    if not subs:
+        return
+    problems = []
+    if subs[0]["start"] != s or subs[-1]["end"] != e or any(
+            b["start"] != a["end"] + _dt.timedelta(days=1) for a, b in zip(subs, subs[1:])):
+        problems.append("sub-periods do not cover the period contiguously: "
+                        + ", ".join(f"{p['label']} ({p['start']}..{p['end']})" for p in subs))
+    acc = lambda p: {r["account_id"]: r for r in p["rows"]}  # noqa: E731
+    tot_a = acc(tot)
+    sub_a = [acc(p) for p in subs]
+    for aid, r in sorted(tot_a.items()):
+        mv = sum((signed_debit(m[aid], "period") for m in sub_a if aid in m), ZERO)
+        if mv != signed_debit(r, "period"):
+            problems.append(f"account {aid} ({r.get('account_name')}): months sum to {mv}, period shows "
+                            f"{signed_debit(r, 'period')}")
+    for aid, r in sorted(tot_a.items()):
+        first_o = signed_debit(sub_a[0][aid], "opening") if aid in sub_a[0] else ZERO
+        last_c = signed_debit(sub_a[-1][aid], "closing") if aid in sub_a[-1] else ZERO
+        if first_o != signed_debit(r, "opening"):
+            problems.append(f"{subs[0]['label']} opening differs from {cur['label']} opening for account {aid} "
+                            f"({first_o} vs {signed_debit(r, 'opening')})")
+        if last_c != signed_debit(r, "closing"):
+            problems.append(f"{subs[-1]['label']} closing differs from {cur['label']} closing for account {aid} "
+                            f"({last_c} vs {signed_debit(r, 'closing')})")
+    for (pa, ma), (pb, mb) in zip(zip(subs, sub_a), zip(subs[1:], sub_a[1:])):
+        for aid in sorted(set(ma) | set(mb)):
+            ca = signed_debit(ma[aid], "closing") if aid in ma else ZERO
+            ob = signed_debit(mb[aid], "opening") if aid in mb else ZERO
+            if ca != ob:
+                problems.append(f"{pa['label']} closing differs from {pb['label']} opening for account {aid} "
+                                f"({ca} vs {ob})")
+
+    def profit(p):
+        return (sum((natural(r, "period") for r in p["rows"] if r.get("account_class") in INCOME_CLASSES
+                     and r["account_class"] != "sales_returns_and_allowances"), ZERO)
+                - sum((natural(r, "period") for r in p["rows"] if r["account_class"] == "sales_returns_and_allowances"),
+                      ZERO)
+                - sum((natural(r, "period") for r in p["rows"] if r.get("account_class") in EXPENSE_CLASSES), ZERO))
+    month_profit = [(p["label"], profit(p)) for p in subs]
+    if problems:
+        diff = profit(tot) - sum((v for _, v in month_profit), ZERO)
+        log.add("ai_period_rollup", "critical", "trial_balance",
+                f"Sub-period trial balances do not roll up to {cur['label']}: profit after all booked expenses by "
+                f"sub-period {', '.join(f'{lbl} {v}' for lbl, v in month_profit)} vs period {profit(tot)} "
+                f"(difference {diff}). The monthly breakdown is withheld; period totals come from the period trial "
+                "balance.", records=len(problems), amount=diff, blocks=["tb_months"], evidence=problems[:12])
 
 
 def _bank_checks(data, config, log):
@@ -352,6 +425,7 @@ def run_checks(data, config):
     _structure_checks(data, log)
     _currency_checks(data, config, log)
     _tb_checks(data, config, log)
+    _rollup_checks(data, config, log)
     _bank_checks(data, config, log)
     _subledger_checks(data, config, log)
     _gstin_checks(data, config, log)

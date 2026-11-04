@@ -1,0 +1,107 @@
+{
+  "workbook": "dashboard.xlsx",
+  "formulas": 15,
+  "mapped_checks": 15,
+  "unsupported_functions": [],
+  "hardcoded_formula_constants": 0,
+  "inconsistent_formulas": [],
+  "libreoffice": {
+    "status": "ok",
+    "compared": 15,
+    "mismatches": []
+  },
+  "problems": [],
+  "status": "passed",
+  "cells": [
+    {
+      "sheet": "Dashboard",
+      "cell": "B10",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0079\",Data!$A$2:$A$91,0))",
+      "value": 1140000.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B12",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0076\",Data!$A$2:$A$91,0))",
+      "value": 0.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B13",
+      "formula": "=B6/B5",
+      "value": 0.4090909090909091
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B14",
+      "formula": "=B7/B5",
+      "value": 0.22424242424242424
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B5",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0003\",Data!$A$2:$A$91,0))",
+      "value": 3300000.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B6",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0005\",Data!$A$2:$A$91,0))",
+      "value": 1350000.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B7",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0008\",Data!$A$2:$A$91,0))",
+      "value": 740000.0
+    },
+    {
+      "sheet": "Dashboard",
+      "cell": "B8",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0012\",Data!$A$2:$A$91,0))",
+      "value": 590000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B2",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0003\",Data!$A$2:$A$91,0))",
+      "value": 3300000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B3",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0004\",Data!$A$2:$A$91,0))",
+      "value": 1950000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B4",
+      "formula": "=B2-B3",
+      "value": 1350000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B5",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0007\",Data!$A$2:$A$91,0))",
+      "value": 610000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B6",
+      "formula": "=B4-B5",
+      "value": 740000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B7",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0010\",Data!$A$2:$A$91,0))",
+      "value": 590000.0
+    },
+    {
+      "sheet": "P&L",
+      "cell": "B8",
+      "formula": "=INDEX(Data!$E$2:$E$91,MATCH(\"CALC-0012\",Data!$A$2:$A$91,0))",
+      "value": 590000.0
+    }
+  ]
+}

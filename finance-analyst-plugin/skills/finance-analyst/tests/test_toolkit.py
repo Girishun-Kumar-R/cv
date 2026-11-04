@@ -42,7 +42,8 @@ def read_rows(path):
 
 def run_pipeline(input_dir, out_dir, narrative=None, depth="comprehensive", config=None):
     with redirect_stdout(io.StringIO()):
-        code = fa_run.run(input_dir, config or os.path.join(input_dir, "run_config.json"), out_dir, narrative, depth)
+        code = fa_run.run(input_dir, config or os.path.join(input_dir, "run_config.json"), out_dir, narrative, depth,
+                          formats=("md",))
     def load(name):
         with open(os.path.join(out_dir, name), encoding="utf-8") as fh:
             return json.load(fh)
@@ -143,8 +144,9 @@ class TestSamplePipeline(unittest.TestCase):
         self.assertEqual(self.v("ap_aging", bucket="61_90"), D("300000"))
         self.assertEqual(self.v("customer_concentration", measure="top_1_share"), D("0.35"))
         self.assertEqual(self.v("customer_concentration", measure="hhi").quantize(D("1")), 2406)
+        # 1.3.0: revenue budget is compared on its declared basis (net revenue 1,18,00,000 vs budget 1,25,00,000)
         self.assertEqual(self.v("budget_variance", account_class="revenue_from_operations", measure="variance"),
-                         D("-500000"))
+                         D("-700000"))
         self.assertEqual(self.v("marketplace_fees", provider="all"), D("100000"))
         self.assertEqual(self.v("settlement_variance"), D("246020"))
         recs = self.load("reconciliation.json")["rules"][0]["records"]

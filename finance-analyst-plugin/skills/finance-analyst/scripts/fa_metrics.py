@@ -81,6 +81,8 @@ class Engine:
         return [r for r in (input_ref(self.data, k) for k in kinds) if r]
 
     def _period(self, which):
+        if isinstance(which, dict):
+            return {"label": which["label"], "start": which["start"], "end": which["end"]}
         p = self.cur if which == "current" else self.cmp
         return {"label": p["label"], "start": p["start"], "end": p["end"]} if p else None
 
@@ -136,13 +138,27 @@ class Engine:
         return Decimal((_d(p["end"]) - _d(p["start"])).days + 1)
 
     # ------------------------------------------------------------- P&L block
+    def sub_periods(self):
+        """Monthly/quarterly TB periods inside the current period (explicit config or auto-detected)."""
+        s, e = _d(self.cur["start"]), _d(self.cur["end"])
+        wanted = self.config.get("sub_periods")
+        out = []
+        for label, p in sorted(self.periods.items(), key=lambda kv: (kv[1]["start"] or s, kv[0])):
+            if label in (self.cur["label"], (self.cmp or {}).get("label")) or not p["start"] or not p["end"]:
+                continue
+            if wanted is not None and label not in wanted:
+                continue
+            if s <= p["start"] and p["end"] <= e:
+                out.append({"label": label, "start": p["start"].isoformat(), "end": p["end"].isoformat()})
+        return out
+
     def pnl(self, which):
         p = self._period(which)
         if not p:
             return
         label = p["label"]
         tb = ["trial_balance"]
-        g = ["tb", "journals"]
+        g = ["tb", "journals"] + (["tb_months"] if isinstance(which, dict) else [])
         has_tb = label in self.periods
         if not has_tb and "trial_balance" in self.data["datasets"]:
             for m in PNL_LINES + ["gross_margin", "ebitda_margin", "operating_margin", "net_margin",
@@ -193,15 +209,22 @@ class Engine:
         self.add("profit_before_tax", pbt, "money",
                  "operating_profit + other_income - finance_costs - (exceptional + prior_period + fx)", tb, which,
                  groups=g)
-        self.add("net_profit", npf, "money", "profit_before_tax - tax expense", tb, which, groups=g,
-                 readiness="partial" if no_tax else "ready",
-                 warnings=["Tax provision not booked for the period; tax is never estimated."] if no_tax else None)
-        self.add("net_margin", safe_div(npf, nr), "percent", "net_profit / net_revenue", tb, which, groups=g,
-                 readiness="partial" if no_tax else "ready", parameters=nm(npf, nr))
-        etr = safe_div(tax, pbt) if pbt is not None and pbt > 0 else None
+        no_tax_msg = ("No tax provision booked for the period: profit after tax (net profit) is not stated; profit "
+                      "before tax is shown under its own label. Tax is never estimated.")
+        self.add("net_profit", None if no_tax else npf, "money", "profit_before_tax - tax expense", tb, which, groups=g,
+                 readiness="needs_data" if no_tax else "ready", warnings=[no_tax_msg] if no_tax else None,
+                 parameters={"result_note": "tax_provision_not_booked"} if no_tax else None)
+        self.add("net_margin", None if no_tax else safe_div(npf, nr), "percent", "net_profit / net_revenue", tb, which,
+                 groups=g, readiness="needs_data" if no_tax else "ready", warnings=[no_tax_msg] if no_tax else None,
+                 parameters={"result_note": "tax_provision_not_booked"} if no_tax else nm(npf, nr))
+        etr = safe_div(tax, pbt) if pbt is not None and pbt > 0 and not no_tax else None
         self.add("effective_tax_rate", etr, "percent", "tax expense / profit_before_tax", tb, which, groups=g,
-                 parameters={"result_note": "not_meaningful"} if etr is None and pbt is not None else None,
-                 warnings=["Book measure only; not a tax computation."])
+                 parameters=({"result_note": "tax_provision_not_booked"} if no_tax else
+                             ({"result_note": "not_meaningful"} if etr is None and pbt is not None else None)),
+                 readiness="needs_data" if no_tax else "ready",
+                 warnings=["Book measure only; not a tax computation."] + ([no_tax_msg] if no_tax else []))
+        if isinstance(which, dict):
+            return
         self.add("cost_to_revenue_ratio", safe_div(None if cogs is None else cogs + opex, nr), "percent",
                  "(cogs + operating_expenses) / net_revenue", tb, which, groups=g, parameters=nm(cogs, nr))
         p = self.periods[label]
@@ -430,6 +453,7 @@ class Engine:
                          dimension={"bucket": "total"})
                 continue
             buckets = {b[0]: ZERO for b in AGING_BUCKETS}
+            lines = {b[0]: [] for b in AGING_BUCKETS}
             no_due = 0
             for r in ds["rows"]:
                 ref = r.get("due_date") or r.get("invoice_date") or r.get("bill_date")
@@ -442,14 +466,16 @@ class Engine:
                         break
                     if (lo is None and age <= hi) or (lo is not None and age >= lo and (hi is None or age <= hi)):
                         buckets[name] += amt
+                        lines[name].append(r["_line"])
                         break
             warn = [f"{no_due} item(s) without due date aged from document date."] if no_due else []
             for name, _, _ in AGING_BUCKETS:
                 self.add(metric, buckets[name], "money", "sum(open balance where days past due in bucket)", [kind],
                          groups=[group], dimension={"bucket": name}, warnings=warn,
-                         parameters={"as_of": self.cur["end"]})
+                         parameters={"as_of": self.cur["end"], "source_rows": lines[name]})
             self.add(metric, sum(buckets.values(), ZERO), "money", "sum(all buckets)", [kind], groups=[group],
-                     dimension={"bucket": "total"}, warnings=warn, parameters={"as_of": self.cur["end"]})
+                     dimension={"bucket": "total"}, warnings=warn,
+                     parameters={"as_of": self.cur["end"], "source_rows": sorted(x for v in lines.values() for x in v)})
 
     # ------------------------------------------------------------- sales block
     def sales(self):
@@ -472,16 +498,18 @@ class Engine:
         for metric, field in (("revenue_by_customer", "customer_id"), ("revenue_by_product", "sku"),
                               ("revenue_by_channel", "channel")):
             agg = defaultdict(lambda: ZERO)
-            names = {}
+            names, src = {}, defaultdict(list)
             for r in rows:
                 k = r.get(field) or "unallocated"
                 agg[k] += r.get("taxable_value") or ZERO
+                src[k].append(r["_line"])
                 if field == "customer_id" and r.get("customer_name"):
                     names[k] = r["customer_name"]
             for k in sorted(agg, key=lambda x: (-agg[x], x)):
                 self.add(metric, agg[k], "money", f"group_by(sales register taxable value, {field})",
                          ["sales_lines"], groups=["sales"], readiness=readiness, warnings=warn,
-                         dimension={field: k}, parameters={"name": names.get(k)} if names.get(k) else None)
+                         dimension={field: k},
+                         parameters=dict({"source_rows": src[k]}, **({"name": names[k]} if names.get(k) else {})))
             if field == "customer_id":
                 ranked = sorted(agg.values(), reverse=True)
         for n in (1, 5, 10):
@@ -512,7 +540,25 @@ class Engine:
         readiness = "partial" if unapproved else "ready"
         for r in sorted(rows, key=lambda x: x.get("account_class") or ""):
             cls = r.get("account_class")
-            actual, _ = self.pl(label, {cls})
+            basis = (r.get("amount_basis") or "").strip().lower()
+            line_warn, line_ready, comparator = list(warn), readiness, f"ledger({cls})"
+            if cls == "revenue_from_operations":
+                if basis in ("", "net_revenue"):
+                    actual, comparator = self.get("net_revenue"), "net_revenue"
+                    if not basis:
+                        line_ready = "partial"
+                        line_warn.append("Budget amount_basis not stated; compared with net revenue (the P&L headline "
+                                         "definition). State amount_basis to confirm.")
+                elif basis == "gross_revenue":
+                    actual, comparator = self.get("gross_revenue"), "gross_revenue"
+                else:
+                    actual, comparator = None, "blocked"
+            else:
+                actual, _ = self.pl(label, {cls})
+            if basis == "tax_inclusive" or comparator == "blocked":
+                actual, line_ready = None, "blocked"
+                line_warn.append(f"Budget amount_basis '{basis}' cannot be compared with tax-exclusive actuals; restate "
+                                 "the budget tax-exclusive (no GST rate is assumed).")
             budget = r.get("amount")
             var = None if actual is None or budget is None else actual - budget
             pct = None if var is None or budget == 0 else var / abs(budget)
@@ -521,12 +567,14 @@ class Engine:
                 fav = (var > 0) if cls in INCOME_CLASSES - {"sales_returns_and_allowances"} else (var < 0)
                 fav = "favourable" if fav else ("neutral" if var == 0 else "unfavourable")
             kinds = ["trial_balance", "budget"]
-            params = {"budget_version": r.get("budget_version"), "favourability": fav}
+            params = {"budget_version": r.get("budget_version"), "favourability": fav,
+                      "amount_basis": basis or "not_stated", "comparator_metric": comparator,
+                      "source_rows": [r["_line"]]}
             pct_params = nm(var, budget, params)
             for measure, val, unit in (("actual", actual, "money"), ("budget", budget, "money"),
                                        ("variance", var, "money"), ("variance_pct", pct, "percent")):
                 self.add("budget_variance", val, unit, "actual - budget; pct = variance / abs(budget)", kinds,
-                         groups=["tb", "budget"], readiness=readiness, warnings=warn,
+                         groups=["tb", "budget"], readiness=line_ready, warnings=line_warn,
                          dimension={"account_class": cls, "measure": measure},
                          parameters=pct_params if measure == "variance_pct" else params)
 
@@ -555,11 +603,30 @@ class Engine:
                      ["settlements", "bank_transactions"], groups=["settlements", "bank"])
             return
         total = ZERO
+        window = int(self.config.get("reconciliation", {}).get("settlement_to_bank_days", 5))
+        split = {"timing": ZERO, "unexplained": ZERO}
+        split_rows = {"timing": [], "unexplained": []}
+        as_of = _d(self.cur["end"])
         for rec in rule["records"]:
             if rec["match_status"] == "unmatched":
-                total += rec["expected_net"] or ZERO
+                amt = rec["expected_net"] or ZERO
+                total += amt
+                days = (as_of - rec["settlement_date"]).days if rec.get("settlement_date") else None
+                cls = "timing" if days is not None and days <= window else "unexplained"
+                split[cls] += amt
+                split_rows[cls].append(rec["settlement_id"])
             elif rec["difference"] is not None:
                 total += -(rec["difference"])
+                if rec["match_status"] == "conflicting" and rec["difference"] != 0:
+                    split["unexplained"] += -(rec["difference"])
+                    split_rows["unexplained"].append(rec["settlement_id"])
+        for cls in ("timing", "unexplained"):
+            self.add("settlement_variance", split[cls], "money",
+                     "timing: unmatched within settlement_to_bank_days; unexplained: beyond the window or conflicting",
+                     ["settlements", "bank_transactions"], groups=["settlements", "bank"],
+                     dimension={"class": cls}, parameters={"settlement_ids": split_rows[cls], "timing_window_days": window,
+                                                           "nature": "timing (possibly in transit)" if cls == "timing"
+                                                           else "unexplained shortfall (potential leakage; review)"})
         self.add("settlement_variance", total, "money",
                  "sum(expected net - bank credited); unmatched settlements count in full",
                  ["settlements", "bank_transactions"], groups=["settlements", "bank"],
@@ -573,6 +640,9 @@ class Engine:
         self.pnl("current")
         if self.cmp:
             self.pnl("comparison")
+        self.months = self.sub_periods()
+        for m in self.months:
+            self.pnl(m)
         self.comparisons()
         self.balances()
         self.cash()
@@ -580,7 +650,39 @@ class Engine:
         self.sales()
         self.budget()
         self.settlements()
+        self.trace()
         return self.reg
+
+    TRACE_CLASSES = {
+        "gross_revenue": {"revenue_from_operations"}, "sales_returns_and_allowances": {"sales_returns_and_allowances"},
+        "net_revenue": {"revenue_from_operations", "other_operating_revenue", "sales_returns_and_allowances"},
+        "cogs": COST_OF_REVENUE_CLASSES, "operating_expenses": OPERATING_EXPENSE_CLASSES,
+        "finance_costs": FIN, "accounts_receivable": {"trade_receivables"}, "accounts_payable": TRADE_PAYABLE_CLASSES,
+        "inventory_value": {"inventories"}, "outstanding_debt": BORROWING_CLASSES,
+    }
+
+    def trace(self):
+        """Attach contributing ledger accounts to TB-derived figures (spec ver_source_trace)."""
+        revenue = self.TRACE_CLASSES["net_revenue"]
+        derived = {"gross_profit": revenue | COST_OF_REVENUE_CLASSES,
+                   "ebitda": revenue | COST_OF_REVENUE_CLASSES | OPERATING_EXPENSE_CLASSES}
+        derived["operating_profit"] = derived["ebitda"] | DA
+        derived["profit_before_tax"] = derived["operating_profit"] | {"other_income"} | FIN | OTHER_SEP
+        derived["net_profit"] = derived["profit_before_tax"] | TAX_CLASSES
+        classes_for = dict(self.TRACE_CLASSES, **derived)
+        balance_metrics = {"accounts_receivable", "accounts_payable", "inventory_value", "outstanding_debt"}
+        for r in self.reg.records:
+            if r["value"] is None or r["metric_id"] not in classes_for and r["metric_id"] != "expense_by_category":
+                continue
+            p = self.periods.get((r["period"] or {}).get("label"))
+            if not p:
+                continue
+            classes = ({r["dimension"]["account_class"]} if r["metric_id"] == "expense_by_category"
+                       else classes_for[r["metric_id"]])
+            which = "closing" if r["metric_id"] in balance_metrics else "period"
+            accts = sorted({x["account_id"] for x in p["rows"] if x.get("account_class") in classes
+                            and natural(x, which) != 0})
+            r["parameters"] = dict(r["parameters"] or {}, source_accounts=accts)
 
 
 def material(var, base, revenue, mat):

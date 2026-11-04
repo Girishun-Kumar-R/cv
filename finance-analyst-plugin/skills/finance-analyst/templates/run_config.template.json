@@ -1,0 +1,34 @@
+{
+  "company_name": "<Company name as in books>",
+  "entity_id": "<short id>",
+  "entity_gstins": [
+    "<15-character GSTIN, optional>"
+  ],
+  "currency": "INR",
+  "reporting_basis": "accrual",
+  "current_period": {
+    "label": "<e.g. H1 FY2025-26>",
+    "start": "YYYY-MM-DD",
+    "end": "YYYY-MM-DD"
+  },
+  "comparison_period": {
+    "label": "<optional, e.g. H1 FY2024-25>",
+    "start": "YYYY-MM-DD",
+    "end": "YYYY-MM-DD"
+  },
+  "materiality": {
+    "absolute_floor_inr": "25000",
+    "relative_threshold": "0.10",
+    "revenue_share_floor": "0.005"
+  },
+  "reconciliation": {
+    "settlement_to_bank_days": 5
+  },
+  "net_burn_window_months": 3,
+  "credit_purchases_incl_tax": null,
+  "_notes": [
+    "Remove comparison_period if there is no comparison.",
+    "credit_purchases_incl_tax: set only if supplied by the customer or a purchase register (makes DPO ready); otherwise delete the key.",
+    "Dates must be ISO YYYY-MM-DD."
+  ]
+}

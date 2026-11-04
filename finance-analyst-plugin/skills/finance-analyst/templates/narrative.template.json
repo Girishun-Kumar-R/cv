@@ -1,0 +1,30 @@
+{
+  "title": "<Report title>",
+  "executive_summary": [
+    "<Sentence with figures only as placeholders, e.g. Net revenue was {{metric:net_revenue}}.>"
+  ],
+  "findings": [
+    {
+      "statement": "<One finding. Use {{metric:id}}, {{metric:id[dim=value]}}, {{metric:id@comparison}} or {{calc:CALC-0000}}.>",
+      "refs": [
+        "metric:<id>",
+        "check:<check_id>",
+        "CON-BANK-BOOK"
+      ],
+      "label": "fact | estimate | hypothesis | customer_provided"
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "<Imperative, specific action>",
+      "rationale": "<Why, tied to findings>",
+      "impact": "<Quantified with placeholders; assumptions as {{input:VALUE|SOURCE}}>",
+      "refs": [
+        "metric:<id>"
+      ],
+      "confidence": "high | medium | low",
+      "effort": "low | medium | high",
+      "professional_review_needed": false
+    }
+  ]
+}

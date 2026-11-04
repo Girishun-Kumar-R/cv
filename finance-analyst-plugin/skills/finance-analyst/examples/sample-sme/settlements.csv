@@ -1,0 +1,4 @@
+provider,settlement_id,settlement_date,gross_amount,fees,tax_on_fees,refunds,withholdings,adjustments,net_amount,bank_reference,currency
+marketplace_a,MA-SET-0001,2025-06-14,500000.00,60000.00,10800.00,20000.00,2500.00,0.00,406700.00,UTRMA0001,INR
+gateway_x,GX-SET-0002,2025-07-20,200000.00,4000.00,720.00,0.00,0.00,0.00,195280.00,,INR
+marketplace_a,MA-SET-0003,2025-09-25,300000.00,36000.00,6480.00,10000.00,1500.00,0.00,246020.00,UTRMA0003,INR

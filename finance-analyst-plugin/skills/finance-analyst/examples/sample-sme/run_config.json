@@ -1,0 +1,29 @@
+{
+  "company_name": "Sample Traders Private Limited (fictional)",
+  "entity_id": "ENT-SAMPLE",
+  "entity_gstins": [
+    "27ZZZCS0001S1ZL"
+  ],
+  "currency": "INR",
+  "reporting_basis": "accrual",
+  "current_period": {
+    "label": "H1 FY2025-26",
+    "start": "2025-04-01",
+    "end": "2025-09-30"
+  },
+  "comparison_period": {
+    "label": "H1 FY2024-25",
+    "start": "2024-04-01",
+    "end": "2024-09-30"
+  },
+  "materiality": {
+    "absolute_floor_inr": "25000",
+    "relative_threshold": "0.10",
+    "revenue_share_floor": "0.005"
+  },
+  "reconciliation": {
+    "settlement_to_bank_days": 5
+  },
+  "net_burn_window_months": 3,
+  "_note": "Synthetic data for testing only. No real company, person or account."
+}

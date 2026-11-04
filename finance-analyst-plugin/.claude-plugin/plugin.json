@@ -1,0 +1,18 @@
+{
+  "name": "finance-analyst",
+  "version": "0.1.0",
+  "description": "Agentic financial analyst and virtual CFO for Indian SMEs: guided onboarding, connector and file-import guidance, data discovery, validation, reconciliation, deterministic metrics, evidence-linked recommendations and one independently verified report. Read-only.",
+  "author": {
+    "name": "Girishun Kumar R"
+  },
+  "keywords": [
+    "finance",
+    "virtual-cfo",
+    "accounting",
+    "reconciliation",
+    "india",
+    "gst",
+    "sme",
+    "financial-analysis"
+  ]
+}

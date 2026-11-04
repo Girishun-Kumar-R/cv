@@ -1,0 +1,26 @@
+{
+  "kind": "trial_balance",
+  "mode": "two_snapshots",
+  "absent_means_zero": true,
+  "opening_file": "../../examples/raw-exports/tally_trial_balance_opening.csv",
+  "closing_file": "../../examples/raw-exports/tally_trial_balance_closing.csv",
+  "columns": {
+    "account_name": "Particulars"
+  },
+  "snapshot_columns": {
+    "debit": "Debit",
+    "credit": "Credit"
+  },
+  "skip_first_cell_patterns": [
+    "^grand total",
+    "^sample traders",
+    "^trial balance"
+  ],
+  "constants": {
+    "period_label": "H1 FY2025-26",
+    "period_start": "2025-04-01",
+    "period_end": "2025-09-30"
+  },
+  "class_map_file": "../../examples/raw-exports/class_map.confirmed.csv",
+  "_note": "Example: two TallyPrime trial balance exports 'as at' period start and end."
+}

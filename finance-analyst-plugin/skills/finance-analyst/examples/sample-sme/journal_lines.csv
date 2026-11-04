@@ -1,0 +1,5 @@
+journal_id,posting_date,account_id,debit,credit,narration
+JV-0101,2025-09-30,6100,100000.00,0.00,Depreciation H1
+JV-0101,2025-09-30,1000,0.00,100000.00,Depreciation H1
+JV-0102,2025-09-30,6300,362500.00,0.00,Tax provision H1
+JV-0102,2025-09-30,2500,0.00,362500.00,Tax provision H1

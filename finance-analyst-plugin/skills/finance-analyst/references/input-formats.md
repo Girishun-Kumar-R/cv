@@ -59,4 +59,7 @@ evidence; resolve every error and warning before running the pipeline.
 
 Copy `templates/run_config.template.json`. Required: `company_name`, `current_period {label, start, end}`.
 Optional: `comparison_period`, `entity_gstins`, `materiality`, `reconciliation.settlement_to_bank_days`,
-`net_burn_window_months`, `credit_purchases_incl_tax` (only if supplied by the customer or a purchase register).
+`reconciliation.customer_confirmed_matches` (settlement ids the customer confirmed after a reflex
+`customer_confirmation` request), `net_burn_window_months`, `credit_purchases_incl_tax` (only if supplied by the
+customer or a purchase register), and `reflex` (overrides for `templates/reflex_rules.json`; see
+`references/reflex-engine.md`).

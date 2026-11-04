@@ -59,6 +59,7 @@
 #   §32 implementation_requirements what an implementing session must build
 #   §33 glossary
 #   §34 changelog
+#   §35 reflex_engine              proactive financial reflex engine (1.2.0)
 # =============================================================================
 
 # =============================================================================
@@ -67,7 +68,7 @@
 spec:
   id: finance-analyst
   kind: master_product_specification
-  schema_version: "1.1.0"
+  schema_version: "1.2.0"
   schema_status: stable
   released: "2026-11-04"
   min_adapter_version: "1.0.0"
@@ -359,7 +360,7 @@ metadata:
 
   versioning:
     scheme: semantic_versioning
-    current: "1.1.0"
+    current: "1.2.0"
     rules:
       major: "Breaking change: removed or renamed keys, changed meaning of an id, changed formula semantics of an existing metric version, any introduction of write capabilities."
       minor: "Backward-compatible additions: new connectors, metrics, modules, reports, checks, optional keys."
@@ -953,8 +954,25 @@ workflow:
       outputs: [module_findings]
       user_interaction: none
       error_states: []
-      transitions: {on_success: variance_and_root_cause, on_quick_answer: independent_verification}
+      transitions: {on_success: proactive_reflex, on_quick_answer: independent_verification}
       skippable_when: "execution_path = quick_answer"
+
+    - id: proactive_reflex
+      order: 15.5
+      introduced_in: "1.2.0"
+      name: "Proactive financial reflex"
+      purpose: "Detect important findings and run the triggered read-only investigations, calculations, scenarios and charts automatically within the task; queue anything external or financial for approval."
+      entry_conditions: ["metric_results exist", "reflex_engine.configuration enabled"]
+      inputs: [metric_results, issue_register, reconciliation_results, canonical_datasets, reflex_configuration, approvals_if_any]
+      actions: [reflex_engine.rules, reflex_engine.execution_limits, reflex_engine.approval_gates]
+      outputs: [triggers, investigations, derived_calculations, scenario_results, charts, insights, prioritised_recommendations, data_requests, approval_requests]
+      user_interaction: "Present pending approvals and data requests once, together. Fulfil auto_if_authorized read-only requests within the task, then re-run (at most max_reflex_rounds)."
+      error_states:
+        - {code: FA-W-RFX-001, condition: "An execution limit was reached", handling: "Defer remaining work with reason; list it in the report."}
+        - {code: FA-I-RFX-002, condition: "Trigger suppressed by threshold, deduplication or acknowledgement", handling: "List in reflex.json; count in report."}
+        - {code: FA-W-RFX-003, condition: "Configuration tried to relax an external or financial approval gate", handling: "Ignore that setting; keep approval_required; tell the customer."}
+      transitions: {on_success: variance_and_root_cause}
+      skippable_when: "reflex_engine disabled in configuration, or execution_path = quick_answer"
 
     - id: variance_and_root_cause
       order: 16
@@ -5565,6 +5583,7 @@ verification:
     - {id: ver_narrative_raw_numbers, introduced_in: "1.1.0", description: "Narrative text written by the agent contains no typed money, percentage or lakh/crore figures; figures enter only through calculation-register placeholders or labelled customer inputs.", pass_rule: "Zero raw figures."}
     - {id: ver_claim_topic_consistency, introduced_in: "1.1.0", description: "Heuristic: a finding that mentions a topic (receivables, payables, cash, margin, settlement, budget, inventory) cites at least one figure from that topic.", pass_rule: "No mismatches; mismatches are warnings that MUST be resolved or justified before delivery."}
     - {id: ver_conflict_figures, introduced_in: "1.1.0", description: "Figures shown in source-conflict records recompute independently from the inputs.", pass_rule: "Exact."}
+    - {id: ver_approval_gates, introduced_in: "1.2.0", description: "No external or financial action is recorded as executed; every prepared artifact corresponds to an approved approval_id with matching scope; gates are never weaker than reflex_engine.action_classes.", pass_rule: "Zero violations."}
   procedure:
     - "Freeze the draft (hash)."
     - "Run all checks; record results with failing items."
@@ -5799,6 +5818,9 @@ error_catalog:
     - {code: FA-E-RPT-001, message: "The requested report format is not available here.", agent_action: "Generate next format in fallback chain and say so.", customer_action: "Accept alternative or use a host with that capability."}
     - {code: FA-E-VER-001, message: "The report did not pass independent verification.", agent_action: "verification.failure_policy", customer_action: "Review the explanation."}
     - {code: FA-E-DLV-001, message: "Files could not be saved to the chosen location.", agent_action: "Present inline; offer another location.", customer_action: "Choose an accessible location."}
+    - {code: FA-W-RFX-001, message: "The reflex engine reached an execution limit; some follow-ups were deferred.", agent_action: "List deferred items; offer to run them with a higher limit.", customer_action: "Optionally raise the limit."}
+    - {code: FA-I-RFX-002, message: "Some triggers were suppressed (threshold, duplicate or acknowledged).", agent_action: "List them in reflex.json and count them in the report.", customer_action: "None."}
+    - {code: FA-W-RFX-003, message: "A setting tried to weaken an approval gate for external or financial actions and was ignored.", agent_action: "Keep approval_required and tell the customer.", customer_action: "None."}
 
 # =============================================================================
 # §30  AUTHORISED CUSTOMER WORKSPACE
@@ -5901,6 +5923,126 @@ implementation_requirements:
     - "A comprehensive report on a fixture passes verification with zero figure mismatches."
 
 # =============================================================================
+# §35  PROACTIVE FINANCIAL REFLEX ENGINE  (introduced in 1.2.0)
+# =============================================================================
+reflex_engine:
+  introduced_in: "1.2.0"
+  purpose: >-
+    After every analysis run, automatically detect important findings,
+    trigger the relevant investigations, use or request additional
+    authorised data, perform validated calculations, simulate useful
+    scenarios, and produce proactive insights, charts and prioritised
+    recommendations that are integrated into the one combined report.
+  principles:
+    - "Runs only inside an active, customer-initiated task. There is no scheduler, monitor, server or background service; nothing runs after the task ends."
+    - "Local read-only work (reading provided data, deterministic calculations, scenarios, charts in the run folder) runs automatically."
+    - "Read-only retrieval from a connector runs automatically only when that source is already authorised and used in this task and the request is within scope; otherwise it waits for approval."
+    - "External actions (emails, uploads, sharing, claims, contacting third parties) and financial write actions (payments, postings, refunds, filings) always require explicit approval. Financial writes are never executed by the plugin: on approval it prepares a proposal that the customer executes in their own systems (runtime_contract.human_authorization.never_allowed)."
+    - "Configuration can tighten approval gates but can never relax the gates for external or financial actions (metadata.extension_rules)."
+    - "Every derived figure and scenario result is a registered calculation that independent verification recomputes."
+    - "Triggers are configurable attention flags, not universal judgements of good or bad (metrics.principles)."
+    - "Deterministic: the same inputs and configuration produce the same triggers, order, identifiers and outputs."
+  placement:
+    stage_id: proactive_reflex
+    runs_after: financial_analysis
+    runs_before: variance_and_root_cause
+    rounds: "A task may re-run the engine after fulfilling data requests, up to execution_limits.max_reflex_rounds."
+  configuration:
+    source: "Defaults below. The plugin ships them as templates/reflex_rules.json; run_config.reflex overrides any key by deep merge."
+    defaults:
+      enabled: true
+      min_severity: low
+      min_confidence: "0.50"
+      execution_limits: {max_triggers: 10, max_actions_per_trigger: 8, max_derived_calcs: 150, max_scenarios: 12, max_charts: 6, max_data_requests: 6, max_runtime_seconds: 60, max_reflex_rounds: 2}
+      deduplication: {merge_same_subject: true, acknowledged_file: null, reopen_if_worsened_pct: "0.20"}
+      approvals: {connector_read: auto_if_authorized, restricted_read: approval_required, customer_confirmation: approval_required, external_action: approval_required, financial_write: approval_required}
+      prioritisation: {impact_high_share_of_monthly_opex: "0.50", effort_scores: {low: 1, medium: 2, high: 3}, confidence_scores: {high: "1.0", medium: "0.7", low: "0.4"}}
+      scenario_parameters: {dso_reduction_days: 10}
+  severity_model:
+    levels_ref: spec.enums.severity
+    rule: "Each rule declares a base severity and an escalation condition. Escalation raises one level (e.g. low → medium). Triggers below min_severity are suppressed with reason below_min_severity."
+  materiality:
+    rule: "Amount tests use investigation.materiality (absolute floor, relative threshold, revenue-share floor) unless a rule states its own amount basis; amounts are compared in exact decimals."
+  confidence_model:
+    values: {ready_inputs: "0.90", partial_inputs: "0.60", probable_or_estimated: "0.50", heuristic_only: "0.40"}
+    rule: "A trigger's confidence is the lowest confidence of the records it relies on. Triggers below min_confidence are suppressed with reason below_min_confidence and are listed, not investigated."
+  deduplication:
+    fingerprint: "SHA-256 of rule_id, subject and period label (first 12 hex characters)."
+    rules:
+      - "Identical fingerprints within a run are evaluated once."
+      - "With merge_same_subject, triggers from different rules on the same subject (e.g. account_class:marketplace_fees) are merged into one investigation that lists every rule."
+      - "Identical data requests and charts are emitted once and shared."
+      - "Fingerprints listed in the acknowledged file are suppressed (reason acknowledged) unless the trigger amount has worsened by at least reopen_if_worsened_pct since acknowledgement."
+  execution_limits:
+    rule: "Accepted triggers are processed in priority order (severity, then amount, then confidence, then rule order). Work beyond a limit is deferred with reason limit_reached and listed; nothing is silently dropped."
+  action_classes:
+    - {id: local_read, gate: auto, description: "Read canonical data already provided for this run."}
+    - {id: local_compute, gate: auto, description: "Deterministic derived calculation added to the calculation register."}
+    - {id: scenario, gate: auto, description: "Deterministic what-if calculation added to the register (scenario_modeling.principles)."}
+    - {id: chart, gate: auto, description: "Chart file written to the run folder from register values."}
+    - {id: connector_read, gate: configurable, default_gate: auto_if_authorized, description: "Read-only retrieval of additional data from a customer-authorised source, returned as a data request for the agent to fulfil within the task."}
+    - {id: restricted_read, gate: approval_required, description: "Retrieval of restricted data (e.g. employee-level payroll)."}
+    - {id: customer_confirmation, gate: approval_required, description: "A decision only the customer can make (e.g. accepting a probable reconciliation match)."}
+    - {id: external_action, gate: approval_required, description: "Anything that leaves the session: emails, uploads, shares, claims, messages to third parties. On approval the plugin prepares a draft; sending is a separate approved step."}
+    - {id: financial_write, gate: approval_required, execution: customer, description: "Payments, postings, refunds, filings. On approval the plugin prepares a proposal only; the customer executes it in their own systems."}
+  approval_gates:
+    request_schema: {approval_id: "APR-<12 hex>", rule_id: string, subject: string, action_id: string, action_class: string, scope: string, reason: string, on_approval: string, execution: "plugin_prepares_draft | customer_executes", expires: end_of_task}
+    approval_file_schema: {approved: "list of {approval_id, approved_by, approved_at, scope}", rejected: "list of {approval_id, reason}"}
+    rules:
+      - "Present all pending approvals together, once, in plain language."
+      - "An approval covers only the listed approval_id and scope, for the current task."
+      - "Rejected or unanswered requests stay pending and are reported; they never block the rest of the analysis."
+  rules:
+    - {id: rx_critical_data_blockers, severity: critical, params: {}, condition: "Any critical data-quality or integrity issue.", playbook: [summarise_blocked_metrics, request_corrected_export]}
+    - {id: rx_overdue_receivables, severity: medium, escalate_when: "share >= escalate_share or amount >= 4 x materiality floor", params: {overdue_days: 90, min_share_of_receivables: "0.10", escalate_share: "0.25"}, condition: "Receivables more than overdue_days past due are at least min_share_of_receivables of total receivables and at least the materiality floor.", playbook: [compute_overdue_by_customer, read_customer_revenue_share, scenario_collect_overdue, scenario_dso_reduction, chart_ar_aging, external_draft_collection_reminders]}
+    - {id: rx_customer_concentration, severity: medium, params: {top1_share_at_least: "0.30"}, condition: "Largest customer's share of the sales register is at least top1_share_at_least.", playbook: [compute_top_customer_shares, compute_top_customer_open_receivables, chart_customer_pareto]}
+    - {id: rx_settlement_shortfall, severity: high, params: {}, condition: "A settlement is unmatched or conflicting in rec_settlement_to_bank.", playbook: [compute_unlocated_settlements, compute_settlement_components, scenario_settlement_recovery, chart_settlement_waterfall, connector_read_bank_after_period_end, external_draft_settlement_query]}
+    - {id: rx_bank_book_difference, severity: medium, escalate_when: "difference >= materiality floor", params: {min_abs_difference_inr: "10.00"}, condition: "Bank statement balance differs from book balance at period end.", playbook: [compute_bank_book_difference, connector_read_bank_ledger_lines]}
+    - {id: rx_margin_decline, severity: high, params: {min_decline: "0.01"}, condition: "Gross or EBITDA margin fell by at least min_decline (fraction, i.e. percentage points / 100) against the comparison period.", playbook: [compute_margin_change, scenario_margin_restoration, chart_margin_comparison]}
+    - {id: rx_cost_category_spike, severity: low, escalate_when: "increase >= 4 x materiality floor", params: {min_growth_gap: "0.10"}, condition: "An expense category grew faster than net revenue by at least min_growth_gap and the increase is at least the materiality floor.", playbook: [compute_cost_growth_gap, scenario_cost_normalisation, chart_cost_growth_gaps, connector_read_vendor_bills]}
+    - {id: rx_budget_overrun, severity: medium, params: {min_variance_pct: "0.05", min_revenue_share: "0.01"}, condition: "Unfavourable budget variance of at least the materiality floor and either at least min_variance_pct of budget or at least min_revenue_share of net revenue.", playbook: [compute_budget_shortfall, chart_budget_variance]}
+    - {id: rx_msme_payables_timing, severity: medium, params: {max_days: 45}, condition: "Bills from suppliers classified micro/small outstanding more than max_days after bill date.", playbook: [compute_msme_overdue, scenario_msme_clearance, financial_prepare_payment_proposal]}
+    - {id: rx_liquidity_pressure, severity: high, params: {quick_ratio_below: "1.00", runway_months_below: "6"}, condition: "Quick ratio below quick_ratio_below, or cash runway below runway_months_below while burning cash.", playbook: [compute_near_term_coverage, scenario_dso_reduction]}
+    - {id: rx_partial_metric_upgrade, severity: low, params: {}, condition: "A key metric is partial for a reason another authorised input or a customer decision can remove.", playbook: [connector_read_missing_input, customer_confirm_probable_matches]}
+  derived_calculations:
+    - {id: rx_ar_overdue_total, unit: money, formula: "sum(amount_outstanding where as_of - due_date > overdue_days)", dimension: threshold_days}
+    - {id: rx_ar_overdue_share, unit: percent, formula: "rx_ar_overdue_total / total open receivables"}
+    - {id: rx_ar_overdue_by_customer, unit: money, formula: "rx_ar_overdue_total grouped by customer_id", dimension: customer_id}
+    - {id: rx_customer_revenue_share, unit: percent, formula: "customer taxable sales / total sales register (current period)", dimension: customer_id}
+    - {id: rx_customer_open_receivables, unit: money, formula: "sum(amount_outstanding) for the customer", dimension: customer_id}
+    - {id: rx_settlement_unlocated, unit: money, formula: "expected net of a settlement not located in bank credits (or the shortfall when conflicting)", dimension: settlement_id}
+    - {id: rx_settlement_days_unlocated, unit: days, formula: "as_of - settlement_date", dimension: settlement_id}
+    - {id: rx_settlement_component, unit: money, formula: "sum of a settlement component (gross, fees, tax_on_fees, refunds, withholdings, adjustments, net) in the period", dimension: component}
+    - {id: rx_bank_book_difference, unit: money, formula: "bank statement balance - book cash_and_cash_equivalents at period end"}
+    - {id: rx_margin_change, unit: percent, formula: "margin[P] - margin[C]", dimension: margin}
+    - {id: rx_cost_growth_gap, unit: percent, formula: "(actual_k[P] - actual_k[C]) / abs(actual_k[C]) - revenue_growth", dimension: account_class}
+    - {id: rx_budget_shortfall, unit: money, formula: "absolute unfavourable budget variance of the line", dimension: account_class}
+    - {id: rx_msme_overdue_total, unit: money, formula: "sum(amount_outstanding) for micro/small suppliers outstanding > max_days after bill date"}
+    - {id: rx_msme_overdue_by_supplier, unit: money, formula: "rx_msme_overdue_total grouped by supplier", dimension: supplier_id}
+    - {id: rx_msme_max_days, unit: days, formula: "max(as_of - bill_date) over those bills"}
+    - {id: rx_near_term_obligations, unit: money, formula: "open payables due within 30 days of as_of (incl. overdue)"}
+    - {id: rx_near_term_receipts, unit: money, formula: "open receivables due within 30 days of as_of (not yet overdue)"}
+    - {id: rx_near_term_coverage, unit: ratio, formula: "(cash_balance + rx_near_term_receipts) / rx_near_term_obligations"}
+  scenarios:
+    - {id: scn_collect_overdue_cash, unit: money, formula: "cash_balance + rx_ar_overdue_total", assumption: "Overdue receivables are collected in full; nothing else changes."}
+    - {id: scn_collect_overdue_dso, unit: days, formula: "((opening AR + closing AR - rx_ar_overdue_total) / 2) / credit_sales_incl_tax * days(period)"}
+    - {id: scn_collect_overdue_dso_change, unit: days, formula: "scn_collect_overdue_dso - dso"}
+    - {id: scn_dso_reduction_cash_release, unit: money, formula: "dso_reduction_days * credit_sales_incl_tax / days(period)  (scenario_modeling.standard_formulas.working_capital_change_cash)", parameters: {dso_reduction_days: 10}}
+    - {id: scn_settlement_recovery_cash, unit: money, formula: "cash_balance + sum(rx_settlement_unlocated)"}
+    - {id: scn_margin_restoration_price_increase, unit: percent, formula: "cogs / (1 - comparison gross_margin) / net_revenue - 1", assumption: "Volumes and costs unchanged."}
+    - {id: scn_cost_normalisation_saving, unit: money, formula: "actual_k[P] - actual_k[C] * (1 + revenue_growth)", dimension: account_class, assumption: "The category grows only in line with revenue."}
+    - {id: scn_msme_clearance_cash_after, unit: money, formula: "cash_balance - rx_msme_overdue_total"}
+  outputs:
+    files: {reflex_json: "reflex.json (evaluated rules, triggers, suppressed, deferred, investigations, insights, scenarios, recommendations, data requests, approval requests, prepared artifacts)", charts: "charts/<chart_id>.svg + charts/<chart_id>.json (data bound to calc_ids)", prepared: "prepared/* drafts or proposals, created only for approved approval_ids"}
+    insight_rule: "Insights and recommendations carry figures only as calculation-register placeholders and cite their evidence."
+    recommendation_priority: "recommendations.prioritisation.score using impact (from the scenario or exposure amount relative to materiality and monthly operating expenses), confidence and effort."
+  report_integration:
+    section: "Proactive insights (Reflex Engine), placed after Recommendations"
+    contents: [summary_counts, triggered_findings, insights, scenarios, prioritised_actions, charts_with_data_tables, data_requests_and_approvals, suppressed_and_deferred]
+    rule: "Auto-generated items are labelled as such; the agent may adopt, edit or drop them in narrative.json."
+  verification: [ver_recompute_figures, ver_chart_data, ver_approval_gates, ver_claim_evidence]
+
+# =============================================================================
 # §33  GLOSSARY
 # =============================================================================
 glossary:
@@ -5943,11 +6085,18 @@ glossary:
   economic_event: "One commercial event represented across several records (order, invoice, payment, settlement, bank line)."
   readiness: "Per-item status: ready, partial, needs_data, blocked."
   calc_id: "Identifier of a calculation record in the calculation register."
+  reflex_trigger: "A configurable rule that fires on a finding and starts a bounded, gated investigation within the current task."
+  approval_gate: "A point where the engine stops and waits for the customer's explicit approval before an external or financial action."
 
 # =============================================================================
 # §34  CHANGELOG
 # =============================================================================
 changelog:
+  - version: "1.2.0"
+    date: "2026-11-04"
+    type: minor
+    summary: "Added reflex_engine (§35): configurable trigger rules, severity, materiality, confidence thresholds, deduplication, execution limits, approval gates, derived calculations, scenarios, charts and report integration; workflow stage proactive_reflex between financial_analysis and variance_and_root_cause; verification check ver_approval_gates; error codes FA-W-RFX-001, FA-I-RFX-002, FA-W-RFX-003. Backward compatible."
+    migration_notes: "financial_analysis.transitions.on_success now points to proactive_reflex, which is skippable when the engine is disabled."
   - version: "1.1.0"
     date: "2026-11-04"
     type: minor

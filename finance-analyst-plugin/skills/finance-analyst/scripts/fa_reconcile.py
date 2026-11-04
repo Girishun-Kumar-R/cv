@@ -31,6 +31,7 @@ def reconcile_settlements_to_bank(data, config, issues_log):
         result["reason"] = "Needs both settlements.csv and bank_transactions.csv."
         return result
     window = int(config.get("reconciliation", {}).get("settlement_to_bank_days", 5))
+    confirmed_by_customer = set(config.get("reconciliation", {}).get("customer_confirmed_matches", []))
     credits = [r for r in bank["rows"] if (r.get("credit") or ZERO) > 0]
     used = set()
     records = []
@@ -69,6 +70,10 @@ def reconcile_settlements_to_bank(data, config, issues_log):
                            match_status="probable_match",
                            match_basis=["exact net amount", f"bank date within {window} days",
                                         "provider name in narration" if cands[0][0] == 0 else "no provider name"])
+                if s.get("settlement_id") in confirmed_by_customer:
+                    rec["match_status"] = "confirmed_match"
+                    rec["match_basis"].append("customer confirmed (run_config.reconciliation."
+                                              "customer_confirmed_matches)")
             elif len(cands) > 1:
                 rec["match_status"] = "conflicting"
                 rec["match_basis"] = [f"{len(cands)} equally good bank candidates"]

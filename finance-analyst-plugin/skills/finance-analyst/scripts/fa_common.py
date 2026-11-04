@@ -16,7 +16,7 @@ from decimal import ROUND_HALF_UP, Decimal, InvalidOperation, getcontext
 getcontext().prec = 34
 
 SPEC_FILE_NAME = "finance-analyst.yaml"
-TOOLKIT_VERSION = "0.1.0"
+TOOLKIT_VERSION = "0.2.0"
 FORMULA_VERSION = "1.0"
 ZERO = Decimal("0")
 PAISA = Decimal("0.01")

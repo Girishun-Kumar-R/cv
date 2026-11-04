@@ -52,12 +52,24 @@ RAW_FIGURE = re.compile(r"(₹|\bRs\.?|\bINR\b)\s*\d|\b\d{1,3}(,\d{2,3})+(\.\d+)
                         re.IGNORECASE)
 PLACEHOLDER = re.compile(r"\{\{(calc|metric):([A-Za-z0-9_\-]+)(?:\[([^\]{}]+)\])?(?:@(current|comparison))?\}\}")
 TOPICS = {
-    r"\b(receivable|debtor|overdue|collect)": {"ar_aging", "accounts_receivable", "dso", "revenue_by_customer"},
-    r"\b(payable|creditor|supplier|vendor)": {"ap_aging", "accounts_payable", "dpo"},
-    r"\b(cash|bank balance|runway|burn)": {"cash_balance", "net_burn", "cash_runway", "settlement_variance"},
-    r"\b(margin)": {"gross_margin", "ebitda_margin", "operating_margin", "net_margin", "cost_to_revenue_ratio"},
-    r"\b(settlement|payout)": {"settlement_variance", "marketplace_fees"},
-    r"\b(budget)": {"budget_variance"},
+    r"\b(receivable|debtor|overdue|collect)": {
+        "ar_aging", "accounts_receivable", "dso", "revenue_by_customer", "rx_ar_overdue_total", "rx_ar_overdue_share",
+        "rx_ar_overdue_by_customer", "rx_customer_open_receivables", "rx_near_term_receipts",
+        "scn_collect_overdue_cash", "scn_collect_overdue_dso", "scn_collect_overdue_dso_change",
+        "scn_dso_reduction_cash_release"},
+    r"\b(payable|creditor|supplier|vendor)": {
+        "ap_aging", "accounts_payable", "dpo", "rx_msme_overdue_total", "rx_msme_overdue_by_supplier",
+        "rx_msme_max_days", "rx_near_term_obligations", "scn_msme_clearance_cash_after"},
+    r"\b(cash|bank balance|runway|burn)": {
+        "cash_balance", "net_burn", "cash_runway", "settlement_variance", "rx_bank_book_difference",
+        "rx_settlement_unlocated", "rx_near_term_coverage", "scn_collect_overdue_cash", "scn_settlement_recovery_cash",
+        "scn_msme_clearance_cash_after", "scn_dso_reduction_cash_release", "rx_ar_overdue_total",
+        "rx_customer_open_receivables", "rx_msme_overdue_total"},
+    r"\b(margin)": {"gross_margin", "ebitda_margin", "operating_margin", "net_margin", "cost_to_revenue_ratio",
+                    "rx_margin_change", "scn_margin_restoration_price_increase"},
+    r"\b(settlement|payout)": {"settlement_variance", "marketplace_fees", "rx_settlement_unlocated",
+                               "rx_settlement_days_unlocated", "rx_settlement_component", "scn_settlement_recovery_cash"},
+    r"\b(budget)": {"budget_variance", "rx_budget_shortfall"},
     r"\b(inventory|stock)": {"inventory_value", "dio", "inventory_turnover"},
 }
 INPUT_PLACEHOLDER = re.compile(r"\{\{input:([^|{}]+)\|([^{}]*)\}\}")
@@ -235,6 +247,237 @@ def recompute(input_dir, config):
     return out, periods, bank
 
 
+# ---------------------------------------------------------------- reflex recompute
+
+def _d(iso):
+    import datetime as _dt
+    return _dt.date.fromisoformat(iso)
+
+
+def recompute_reflex(input_dir, config, register, indep, periods, bank):
+    """Independent recomputation of every reflex derived/scenario calculation (reflex_engine §35)."""
+    cur, cmpp = config["current_period"], config.get("comparison_period")
+    lab = cur["label"]
+    as_of, start = _d(cur["end"]), _d(cur["start"])
+    days = Decimal((as_of - start).days + 1)
+    ar = load(os.path.join(input_dir, "ar_open_items.csv")) or []
+    ap = load(os.path.join(input_dir, "ap_open_items.csv")) or []
+    st = load(os.path.join(input_dir, "settlements.csv")) or []
+    sales = load(os.path.join(input_dir, "sales_lines.csv")) or []
+    budget = load(os.path.join(input_dir, "budget.csv")) or []
+    window = int(config.get("reconciliation", {}).get("settlement_to_bank_days", 5))
+    cash = indep.get(("cash_balance", lab, ()))
+    rows_c = periods.get(lab, [])
+    rows_p = periods.get(cmpp["label"], []) if cmpp else []
+
+    def pl(rows, cls):
+        return sum((nat(r, "period") for r in rows if r["account_class"] == cls), Z)
+
+    def ar_ref(r):
+        return _d(r["due_date"] or r["invoice_date"])
+
+    def overdue(thr, cust=None):
+        return sum((num(r["amount_outstanding"]) for r in ar if (as_of - ar_ref(r)).days > thr
+                    and (cust is None or r["customer_id"] == cust)), Z)
+
+    def msme(max_days, sup=None):
+        sel = [r for r in ap if (r.get("msme_classification") or "").lower() in ("micro", "small")
+               and (as_of - _d(r["bill_date"])).days > max_days and (sup is None or r["supplier_id"] == sup)]
+        return sum((num(r["amount_outstanding"]) for r in sel), Z), max([(as_of - _d(r["bill_date"])).days
+                                                                         for r in sel] or [0])
+
+    def unlocated(row):
+        net = (num(row["gross_amount"]) - num(row["fees"]) - num(row.get("tax_on_fees")) - num(row.get("refunds"))
+               - num(row.get("withholdings")) + num(row.get("adjustments")))
+        utr = (row.get("bank_reference") or "").upper()
+        for b in bank or []:
+            if num(b.get("credit")) > 0 and utr and (utr == (b.get("reference") or "").upper()
+                                                     or utr in (b.get("narration") or "").upper()):
+                return abs(num(b["credit"]) - net)
+        if not utr:
+            for b in bank or []:
+                lag = (_d(b["transaction_date"]) - _d(row["settlement_date"])).days
+                if num(b.get("credit")) == net and 0 <= lag <= window:
+                    return Z
+        return net
+
+    credit_sales = sum((num(r["taxable_value"]) + num(r["tax_amount"]) for r in sales
+                        if cur["start"] <= r["invoice_date"] <= cur["end"]), Z)
+    ar_o = sum((nat(r, "opening") for r in rows_c if r["account_class"] == "trade_receivables"), Z)
+    ar_c = sum((nat(r, "closing") for r in rows_c if r["account_class"] == "trade_receivables"), Z)
+    nr_c, nr_p = indep.get(("net_revenue", lab, ())), indep.get(("net_revenue", cmpp["label"], ())) if cmpp else None
+    rg = (nr_c - nr_p) / abs(nr_p) if nr_c is not None and nr_p else None
+    thr_rec = next((r for r in register if r["metric_id"] == "rx_ar_overdue_total"), None)
+    msme_rec = next((r for r in register if r["metric_id"] == "rx_msme_overdue_total"), None)
+    out = {}
+    for r in register:
+        m = r["metric_id"]
+        if not (m.startswith("rx_") or m.startswith("scn_")):
+            continue
+        dims = r["dimension"] or {}
+        v = None
+        if m == "rx_ar_overdue_total":
+            v = overdue(int(dims["threshold_days"]))
+        elif m == "rx_ar_overdue_share":
+            v = overdue(int(dims["threshold_days"])) / sum((num(x["amount_outstanding"]) for x in ar), Z)
+        elif m == "rx_ar_overdue_by_customer":
+            v = overdue(int(dims["threshold_days"]), dims["customer_id"])
+        elif m == "rx_customer_revenue_share":
+            sel = [x for x in sales if cur["start"] <= x["invoice_date"] <= cur["end"]]
+            tot = sum((num(x["taxable_value"]) for x in sel), Z)
+            v = sum((num(x["taxable_value"]) for x in sel if x["customer_id"] == dims["customer_id"]), Z) / tot
+        elif m == "rx_customer_open_receivables":
+            v = sum((num(x["amount_outstanding"]) for x in ar if x["customer_id"] == dims["customer_id"]), Z)
+        elif m == "rx_settlement_unlocated":
+            v = unlocated(next(x for x in st if x["settlement_id"] == dims["settlement_id"]))
+        elif m == "rx_settlement_days_unlocated":
+            v = Decimal((as_of - _d(next(x for x in st if x["settlement_id"] == dims["settlement_id"])[
+                "settlement_date"])).days)
+        elif m == "rx_settlement_component":
+            v = sum((num(x.get(dims["component"])) for x in st if cur["start"] <= x["settlement_date"] <= cur["end"]),
+                    Z)
+        elif m == "rx_bank_book_difference" and cash is not None:
+            v = cash - sum((nat(x, "closing") for x in rows_c if x["account_class"] == "cash_and_cash_equivalents"), Z)
+        elif m == "rx_margin_change" and cmpp:
+            key = {"gross_margin": "gross_profit", "ebitda_margin": "ebitda"}[dims["margin"]]
+            v = (indep[(key, lab, ())] / nr_c) - (indep[(key, cmpp["label"], ())] / nr_p)
+        elif m == "rx_cost_growth_gap" and rg is not None:
+            a, b = pl(rows_c, dims["account_class"]), pl(rows_p, dims["account_class"])
+            v = (a - b) / abs(b) - rg
+        elif m == "rx_budget_shortfall":
+            b = next(x for x in budget if x["period_label"] == lab and x["account_class"] == dims["account_class"])
+            v = abs(pl(rows_c, dims["account_class"]) - num(b["amount"]))
+        elif m == "rx_msme_overdue_total":
+            v = msme(int(dims["max_days"]))[0]
+        elif m == "rx_msme_overdue_by_supplier":
+            v = msme(int(dims["max_days"]), dims["supplier_id"])[0]
+        elif m == "rx_msme_max_days":
+            v = Decimal(msme(int(dims["max_days"]))[1])
+        elif m in ("rx_near_term_obligations", "rx_near_term_receipts", "rx_near_term_coverage"):
+            obl = sum((num(x["amount_outstanding"]) for x in ap if (_d(x["due_date"] or x["bill_date"]) - as_of).days
+                       <= 30), Z)
+            rcp = sum((num(x["amount_outstanding"]) for x in ar if x.get("due_date")
+                       and 0 < (_d(x["due_date"]) - as_of).days <= 30), Z)
+            v = {"rx_near_term_obligations": obl, "rx_near_term_receipts": rcp,
+                 "rx_near_term_coverage": (cash + rcp) / obl if cash is not None and obl else None}[m]
+        elif m == "scn_collect_overdue_cash" and cash is not None and thr_rec:
+            v = cash + overdue(int(thr_rec["dimension"]["threshold_days"]))
+        elif m in ("scn_collect_overdue_dso", "scn_collect_overdue_dso_change") and thr_rec and credit_sales:
+            new = (ar_o + ar_c - overdue(int(thr_rec["dimension"]["threshold_days"]))) / 2 / credit_sales * days
+            v = new if m == "scn_collect_overdue_dso" else new - ((ar_o + ar_c) / 2 / credit_sales * days)
+        elif m == "scn_dso_reduction_cash_release" and credit_sales:
+            v = Decimal(dims["dso_reduction_days"]) * credit_sales / days
+        elif m == "scn_settlement_recovery_cash" and cash is not None:
+            v = cash + sum((unlocated(x) for x in st if cur["start"] <= x["settlement_date"] <= cur["end"]), Z)
+        elif m == "scn_margin_restoration_price_increase" and cmpp:
+            gm_p = indep[("gross_profit", cmpp["label"], ())] / nr_p
+            v = indep[("cogs", lab, ())] / (1 - gm_p) / nr_c - 1
+        elif m == "scn_cost_normalisation_saving" and rg is not None:
+            a, b = pl(rows_c, dims["account_class"]), pl(rows_p, dims["account_class"])
+            v = a - b * (1 + rg)
+        elif m == "scn_msme_clearance_cash_after" and cash is not None and msme_rec:
+            v = cash - msme(int(msme_rec["dimension"]["max_days"]))[0]
+        out[(m, lab, tuple(sorted(dims.items())))] = v
+    return out
+
+
+NON_RELAXABLE = {"restricted_read", "customer_confirmation", "external_action", "financial_write"}
+ALLOWED_STATUS = {
+    "connector_read": {"requested", "shared", "pending_approval", "approved_requested", "not_requested_round_limit",
+                       "deferred"},
+    "gated": {"pending_approval", "approved", "approved_prepared", "rejected", "deferred"},
+    "local": {"done", "skipped", "deferred", "scheduled_after_investigations"},
+}
+
+
+def check_approval_gates(run_dir, rx):
+    problems = []
+    if not rx or not rx.get("enabled"):
+        return problems
+    approvals = {}
+    path = os.path.join(run_dir, "approvals.json")
+    if os.path.isfile(path):
+        with open(path, encoding="utf-8") as fh:
+            approvals = {a["approval_id"]: a for a in json.load(fh).get("approved", [])}
+    for cls in NON_RELAXABLE:
+        if rx.get("config", {}).get("approvals", {}).get(cls) != "approval_required":
+            problems.append(f"approval gate for {cls} is not approval_required")
+    for inv in rx.get("investigations", []):
+        for a in inv["actions"]:
+            cls = a["action_class"]
+            if cls in NON_RELAXABLE:
+                if a["gate"] != "approval_required":
+                    problems.append(f"{a['action_id']}: gate {a['gate']} for {cls}")
+                if a["status"] not in ALLOWED_STATUS["gated"]:
+                    problems.append(f"{a['action_id']}: status {a['status']} not allowed for {cls}")
+                if a["status"] in ("approved", "approved_prepared") and a.get("approval_id") not in approvals:
+                    problems.append(f"{a['action_id']}: marked approved without a matching approval record")
+                if cls == "financial_write" and a.get("execution") not in (None, "customer"):
+                    problems.append(f"{a['action_id']}: financial write must be executed by the customer")
+            elif cls == "connector_read":
+                if a.get("gate") not in ("auto_if_authorized", "approval_required"):
+                    problems.append(f"{a['action_id']}: invalid connector gate {a.get('gate')}")
+                if a["status"] not in ALLOWED_STATUS["connector_read"]:
+                    problems.append(f"{a['action_id']}: status {a['status']} not allowed for connector_read")
+            elif a["status"] not in ALLOWED_STATUS["local"]:
+                problems.append(f"{a['action_id']}: unexpected status {a['status']}")
+    for q in rx.get("approval_requests", []):
+        if q["status"] in ("approved", "approved_prepared") and q["approval_id"] not in approvals:
+            problems.append(f"{q['approval_id']}: approved without a matching approval record")
+    listed = set()
+    for p in rx.get("prepared", []):
+        listed.add(p["file"])
+        if p["approval_id"] not in approvals:
+            problems.append(f"{p['file']}: prepared without an approved approval_id")
+        if not os.path.isfile(os.path.join(run_dir, p["file"])):
+            problems.append(f"{p['file']}: listed but missing")
+        if p["action_class"] == "financial_write" and p["status"] != "prepared_customer_executes":
+            problems.append(f"{p['file']}: financial write not marked customer-executed")
+        if p["action_class"] == "external_action" and p["status"] != "prepared_not_sent":
+            problems.append(f"{p['file']}: external action not marked not-sent")
+    folder = os.path.join(run_dir, "prepared")
+    if os.path.isdir(folder):
+        for name in os.listdir(folder):
+            if f"prepared/{name}" not in listed:
+                problems.append(f"prepared/{name}: file not produced by an approved request")
+    return problems
+
+
+def check_charts(run_dir, rx, by_id):
+    problems, n = [], 0
+    for ch in (rx or {}).get("charts", []):
+        spec_path = os.path.join(run_dir, ch["json"])
+        svg_path = os.path.join(run_dir, ch["svg"])
+        if not os.path.isfile(spec_path) or not os.path.isfile(svg_path):
+            problems.append(f"{ch['chart_id']}: chart files missing")
+            continue
+        with open(spec_path, encoding="utf-8") as fh:
+            spec = json.load(fh)
+        with open(svg_path, encoding="utf-8") as fh:
+            svg = fh.read()
+        items = [(s, s.get("sign", 1)) for s in spec.get("series", [])]
+        items += [(it, 1) for g in spec.get("groups", []) for it in g["items"]]
+        for it, sign in items:
+            n += 1
+            rec = by_id.get(it["calc_id"])
+            if rec is None or rec["value"] is None:
+                problems.append(f"{ch['chart_id']}: {it['calc_id']} not a computed register value")
+                continue
+            if Decimal(str(it["value"])) != Decimal(rec["value"]) * sign:
+                problems.append(f"{ch['chart_id']}: {it['calc_id']} charted {it['value']} but register has "
+                                f"{rec['value']}")
+            unit = it.get("unit", spec.get("unit", "money"))
+            expect = fmt(it["value"], unit, "narrative", "units")
+            if it.get("value_label") != expect:
+                problems.append(f"{ch['chart_id']}: label {it.get('value_label')!r} expected {expect!r}")
+            from xml.sax.saxutils import escape as _esc
+            if _esc(expect) not in svg:
+                problems.append(f"{ch['chart_id']}: value {expect!r} not drawn in the SVG")
+        if "<title" not in svg or "<desc" not in svg:
+            problems.append(f"{ch['chart_id']}: missing accessible title/description")
+    return problems, n
+
+
 # ---------------------------------------------------------------- main checks
 
 def strings_in(obj, skip=("refs", "label", "confidence", "effort", "professional_review_needed")):
@@ -260,6 +503,7 @@ def verify(run_dir, input_dir):
     issues = j("issues.json")
     recon = j("reconciliation.json")
     narrative = j("narrative.json") if os.path.isfile(os.path.join(run_dir, "narrative.json")) else {}
+    rx = j("reflex.json") if os.path.isfile(os.path.join(run_dir, "reflex.json")) else {}
     with open(os.path.join(run_dir, "report_draft.md"), encoding="utf-8") as fh:
         report = fh.read()
     by_id = {r["calc_id"]: r for r in register}
@@ -287,12 +531,19 @@ def verify(run_dir, input_dir):
 
     # ver_recompute_figures
     indep, periods, bank = recompute(input_dir, config)
+    reflex_indep = recompute_reflex(input_dir, config, register, indep, periods, bank)
+    for key, v in reflex_indep.items():
+        if v is None:
+            reflex_indep[key] = "not_recomputable"
+    indep.update(reflex_indep)
     mism, compared = [], 0
     for r in register:
         key = (r["metric_id"], (r["period"] or {}).get("label"), tuple(sorted((r["dimension"] or {}).items())))
         if key in indep and r["readiness"] not in ("blocked", "needs_data"):
             compared += 1
-            if not close(r["value"], indep[key], r["unit"]):
+            if indep[key] == "not_recomputable":
+                mism.append(f"{r['calc_id']} {r['metric_id']}: no independent recomputation possible")
+            elif not close(r["value"], indep[key], r["unit"]):
                 mism.append(f"{r['calc_id']} {r['metric_id']}: register {r['value']} vs recomputed {indep[key]}")
     add("ver_recompute_figures", not mism and compared > 0 or (not mism and not periods),
         mism or f"{compared} figures recomputed independently and matched")
@@ -390,15 +641,20 @@ def verify(run_dir, input_dir):
             return (by_id.get(key) or {}).get("metric_id")
         return key
     ce = []
-    for kind in ("findings", "recommendations"):
-        for n, item in enumerate(narrative.get(kind) or [], 1):
+    reflex_items = {"reflex_insights": [ins for inv in rx.get("investigations", []) for ins in inv["insights"]],
+                    "reflex_recommendations": rx.get("recommendations", [])}
+    sources = dict(narrative)
+    sources.update(reflex_items)
+    for kind in ("findings", "recommendations", "reflex_insights", "reflex_recommendations"):
+        for n, item in enumerate(sources.get(kind) or [], 1):
             refs = item.get("refs") or []
             if not refs:
                 ce.append(f"{kind} #{n} has no evidence references")
             for ref in refs:
                 if not ref_ok(ref):
                     ce.append(f"{kind} #{n} cites unknown reference {ref}")
-            text = " ".join(strings_in(item))
+            text = " ".join(strings_in({k: v for k, v in item.items() if k in ("statement", "title", "rationale",
+                                                                               "impact", "text")}))
             cited = {r.split(":", 1)[1].split("[", 1)[0] for r in refs if r.startswith("metric:")}
             cited |= {by_id[r]["metric_id"] for r in refs if r in by_id}
             for mm in PLACEHOLDER.finditer(text):
@@ -413,8 +669,9 @@ def verify(run_dir, input_dir):
 
     # topic consistency (heuristic, warning only)
     tw = []
-    for kind in ("findings", "recommendations"):
-        for n, item in enumerate(narrative.get(kind) or [], 1):
+    for kind in ("findings", "recommendations", "reflex_insights", "reflex_recommendations"):
+        for n, item in enumerate(sources.get(kind) or [], 1):
+            item = {k: v for k, v in item.items() if k in ("statement", "title", "rationale", "impact", "text")}
             text = " ".join(strings_in(item)).lower()
             metrics = {ph_metric(mm) for mm in PLACEHOLDER.finditer(" ".join(strings_in(item)))} - {None}
             if not metrics:
@@ -455,6 +712,7 @@ def verify(run_dir, input_dir):
     for line in report.splitlines():
         if line.startswith("| CALC-") or "SHA-256" in line:
             continue
+        line = re.sub(r"\b(?:APR|REQ|INV|RXR|CALC|ISS|CON)-[0-9A-Za-z]+(?:-[0-9A-Za-z]+)*", "", line)  # own ids
         no_gstin = re.sub(r"\b\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z][A-Z0-9][0-9A-Z]\b", "", line)
         if re.search(r"\b[A-Z]{5}\d{4}[A-Z]\b", no_gstin):
             mk.append(f"possible unmasked PAN: {line[:80]}")
@@ -494,6 +752,13 @@ def verify(run_dir, input_dir):
                                      Decimal(str(c["figures"][1]["value"])) != book):
                 cfx.append("bank vs book conflict figures do not recompute")
     add("ver_conflict_figures", not cfx, cfx or "conflict figures recompute")
+
+    # reflex: chart data and approval gates
+    chart_problems, charted = check_charts(run_dir, rx, by_id)
+    add("ver_chart_data", not chart_problems, chart_problems or f"{charted} charted value(s) match the register")
+    gate_problems = check_approval_gates(run_dir, rx)
+    add("ver_approval_gates", not gate_problems, gate_problems or "no external or financial action executed; "
+                                                                  "prepared files match approvals")
 
     failed = [c for c in checks if c["status"] == "failed"]
     warned = [c for c in checks if c["status"] == "warning"]

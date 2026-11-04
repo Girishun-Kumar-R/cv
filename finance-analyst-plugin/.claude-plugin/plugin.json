@@ -1,7 +1,7 @@
 {
   "name": "finance-analyst",
-  "version": "0.1.0",
-  "description": "Agentic financial analyst and virtual CFO for Indian SMEs: guided onboarding, connector and file-import guidance, data discovery, validation, reconciliation, deterministic metrics, evidence-linked recommendations and one independently verified report. Read-only.",
+  "version": "0.2.0",
+  "description": "Agentic financial analyst and virtual CFO for Indian SMEs: guided onboarding, connector and file-import guidance, data discovery, validation, reconciliation, deterministic metrics, a Proactive Financial Reflex Engine (automatic read-only investigations, scenarios and charts; approval gates for external or financial actions), evidence-linked recommendations and one independently verified report.",
   "author": {
     "name": "Girishun Kumar R"
   },
@@ -13,6 +13,7 @@
     "india",
     "gst",
     "sme",
-    "financial-analysis"
+    "financial-analysis",
+    "proactive-insights"
   ]
 }

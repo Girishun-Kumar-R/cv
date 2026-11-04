@@ -47,6 +47,9 @@ Every finding and recommendation needs at least one valid reference:
 - `CALC-NNNN` — a calculation id;
 - `check:CHECK_ID` — an issue raised in this run (e.g. `check:ai_msme_payables_timing`);
 - `ISS-NNNN` — a specific issue; `CON-BANK-BOOK`, `CON-SALES-LEDGER` — source-conflict records.
+- Reflex figures can be cited like any metric, e.g. `metric:rx_ar_overdue_total[threshold_days=90]` with
+  `{{metric:rx_ar_overdue_total[threshold_days=90]}}`, or `metric:scn_collect_overdue_cash` with
+  `{{metric:scn_collect_overdue_cash}}`.
 
 Each figure placeholder in an item must also appear in its `refs` (same metric). Do not cite a figure for a topic
 it does not measure (the verifier warns when, for example, a receivables statement cites only revenue figures).

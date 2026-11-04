@@ -176,6 +176,35 @@ def cmd_validate():
             sync.append(f"toolkit check id {cid} not defined in spec")
     if _class_view(doc) != _class_view_tk():
         sync.append("toolkit ACCOUNT_CLASSES differ from canonical_data_model.account_classes")
+    # reflex engine: rule ids, derived/scenario ids and default configuration must match the spec
+    import fa_reflex
+    rx = doc.get("reflex_engine")
+    if rx is None:
+        sync.append("spec has no reflex_engine section but the toolkit implements it")
+    else:
+        spec_rules = [r["id"] for r in rx["rules"]]
+        if spec_rules != fa_reflex.RULE_IDS:
+            sync.append("reflex rule ids differ between spec and fa_reflex.RULE_IDS")
+        spec_derived = [d["id"] for d in rx["derived_calculations"]]
+        spec_scen = [d["id"] for d in rx["scenarios"]]
+        if spec_derived != fa_reflex.DERIVED_IDS:
+            sync.append("reflex derived calculation ids differ from the spec")
+        if spec_scen != fa_reflex.SCENARIO_IDS:
+            sync.append("reflex scenario ids differ from the spec")
+        gates = {a["id"]: a["gate"] for a in rx["action_classes"]}
+        for cls, gate in fa_reflex.ACTION_GATES.items():
+            if gates.get(cls) != gate:
+                sync.append(f"reflex action class {cls}: toolkit gate {gate} vs spec {gates.get(cls)}")
+        dflt = fa_reflex.default_config()
+        spec_d = rx["configuration"]["defaults"]
+        for key in ("enabled", "min_severity", "min_confidence", "execution_limits", "deduplication", "approvals",
+                    "prioritisation", "scenario_parameters"):
+            if dflt.get(key) != spec_d.get(key):
+                sync.append(f"templates/reflex_rules.json '{key}' differs from reflex_engine.configuration.defaults")
+        for r in rx["rules"]:
+            t = dflt["rules"].get(r["id"], {})
+            if t.get("params") != r["params"] or t.get("severity") != r["severity"]:
+                sync.append(f"templates/reflex_rules.json rule {r['id']} differs from the spec")
     spec_prohibited = doc["accounting_integrity"]["opinion_boundaries"]["required_language"]["prohibited"]
     if list(spec_prohibited) != PROHIBITED_PHRASES:
         sync.append("toolkit PROHIBITED_PHRASES differ from the spec")

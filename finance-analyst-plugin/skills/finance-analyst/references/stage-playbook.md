@@ -75,9 +75,22 @@ print it with `python3 scripts/fa_spec.py section <key>` (or `get <dotted.path>`
 - Settlement matching: UTR matches are confirmed; exact-amount-within-window matches are probable and need
   customer confirmation before being treated as confirmed; unmatched settlements are leads, not proof of loss.
 
+## 6b. Proactive reflex  [reflex_engine, workflow]
+
+- Runs inside `fa_run.py` automatically; read `<run>/reflex.json` after every run (details in
+  `references/reflex-engine.md`).
+- Do automatically, within this task: nothing beyond what the engine already did locally, plus read-only
+  `data_requests` with `status: requested` from sources already authorised and used in this task. Re-run with
+  `--reflex-round 2` after adding the data; stop at `max_reflex_rounds`.
+- Ask once, together: every `approval_requests` item with `status: pending_approval`, explaining what happens on
+  approval. Record answers in `approvals.json` and re-run with `--approvals`. Never send drafts, pay proposals or
+  change records on the customer's behalf.
+- Mention deferred items (`FA-W-RFX-001`) and ignored gate relaxations (`FA-W-RFX-003`) in the summary.
+
 ## 7. Analysis and investigation  [analysis_modules, investigation, anomaly_risk_opportunity]
 
-- Work from `calc_register.json` and `signals.json` (material movements by the spec's materiality defaults).
+- Work from `calc_register.json`, `signals.json` (material movements by the spec's materiality defaults) and the
+  reflex investigations in `reflex.json` (already-computed drill-downs and scenarios you can cite).
 - For each material movement, decompose with registered figures (e.g. revenue vs cost lines, category
   variances, aging buckets). Classify explanations as timing, volume, price/rate, mix, one-off, classification,
   accounting adjustment, data issue or unexplained, and grade evidence as confirmed/likely/hypothesis.

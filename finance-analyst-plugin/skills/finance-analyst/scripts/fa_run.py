@@ -4,10 +4,14 @@
                       [--narrative narrative.json] [--depth simple|comprehensive]
 
 Stages: load -> data-quality & integrity checks -> reconciliation -> metrics ->
-signals -> render draft report -> independent verification -> final report.
+signals -> Proactive Financial Reflex Engine (triggers, read-only investigations,
+derived calculations, scenarios, charts, approval queue) -> render draft report ->
+independent verification -> final report.
 Outputs in RUN_DIR: run_config.json, source_manifest.json, issues.json,
-reconciliation.json, calc_register.json, signals.json, report_draft.md,
-render_manifest.json, verification.json, report.md, run_manifest.json.
+reconciliation.json, calc_register.json, signals.json, reflex.json, charts/,
+prepared/ (only for approved actions), report_draft.md, render_manifest.json,
+verification.json, report.md, run_manifest.json.
+Reflex options: --approvals approvals.json, --reflex-round N, --no-reflex.
 
 Exit codes: 0 verified (passed / passed_with_warnings), 2 bad configuration,
 3 verification failed (report.md carries a failure banner; do not present its
@@ -30,6 +34,7 @@ from fa_data import load_inputs, source_manifest  # noqa: E402
 from fa_metrics import Engine, signals  # noqa: E402
 from fa_reconcile import run_reconciliation  # noqa: E402
 from fa_report import render_report  # noqa: E402
+import fa_reflex  # noqa: E402
 import fa_verify  # noqa: E402
 
 DEFAULT_MATERIALITY = {"absolute_floor_inr": "25000", "relative_threshold": "0.10", "revenue_share_floor": "0.005"}
@@ -68,7 +73,8 @@ def validate_config(cfg):
     return errs
 
 
-def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple"):
+def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple", approvals_path=None, reflex_round=1,
+        reflex=True):
     cfg = read_json(config_path)
     cfg.setdefault("currency", "INR")
     cfg.setdefault("reporting_basis", "accrual")
@@ -92,6 +98,19 @@ def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple"):
     engine = Engine(data, cfg, issues, recon)
     reg = engine.run()
     sig = signals(reg, cfg)
+    approvals_copy = os.path.join(out_dir, "approvals.json")
+    if os.path.exists(approvals_copy):
+        os.remove(approvals_copy)
+    approvals = None
+    if approvals_path:
+        approvals = read_json(approvals_path)
+        write_json(approvals_copy, approvals)
+    if reflex:
+        rx = fa_reflex.run_reflex(data, cfg, reg, issues, recon, out_dir, approvals, reflex_round)
+    else:
+        fa_reflex.clear_outputs(out_dir)
+        rx = {"enabled": False, "reason": "disabled for this run (--no-reflex)"}
+    write_json(os.path.join(out_dir, "reflex.json"), rx)
     narrative = {}
     if narrative_path:
         narrative = read_json(narrative_path)
@@ -104,7 +123,8 @@ def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple"):
     write_json(os.path.join(out_dir, "calc_register.json"), reg.records)
     write_json(os.path.join(out_dir, "signals.json"), sig)
     sv = spec_version()
-    draft, manifest = render_report(reg.records, issues, recon, sources, narrative, cfg, depth, run_id, sv)
+    draft, manifest = render_report(reg.records, issues, recon, sources, narrative, cfg, depth, run_id, sv, rx,
+                                    out_dir)
     with open(os.path.join(out_dir, "report_draft.md"), "w", encoding="utf-8") as fh:
         fh.write(draft)
     write_json(os.path.join(out_dir, "render_manifest.json"), manifest)
@@ -128,6 +148,11 @@ def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple"):
         "run_id": run_id, "spec_version": sv, "toolkit_version": TOOLKIT_VERSION, "started_at": started,
         "finished_at": now_ist(), "input_dir": os.path.abspath(input_dir), "depth": depth,
         "datasets": [s["dataset_id"] for s in sources], "issue_count": len(issues),
+        "reflex": {"enabled": rx.get("enabled"), "round": rx.get("round"),
+                   "investigations": len(rx.get("investigations", [])),
+                   "pending_approvals": sum(1 for a in rx.get("approval_requests", [])
+                                            if a["status"] == "pending_approval"),
+                   "data_requests": len(rx.get("data_requests", []))},
         "calculation_count": len(reg.records), "verification_outcome": ver["outcome"],
         "outputs": {n: sha256_file(os.path.join(out_dir, n)) for n in ("report.md", "calc_register.json",
                                                                         "issues.json")},
@@ -140,6 +165,11 @@ def run(input_dir, config_path, out_dir, narrative_path=None, depth="simple"):
         sev[i["severity"]] = sev.get(i["severity"], 0) + 1
     print(f"run {run_id}: {len(sources)} dataset(s), {len(reg.records)} calculation(s) {counts}, "
           f"issues {sev or 'none'}")
+    if rx.get("enabled"):
+        pend = sum(1 for a in rx["approval_requests"] if a["status"] == "pending_approval")
+        print(f"reflex: {rx['triggers_found']} trigger(s), {len(rx['investigations'])} investigated, "
+              f"{len(rx['suppressed'])} suppressed, {len(rx['deferred'])} deferred, {len(rx['data_requests'])} data "
+              f"request(s), {pend} approval(s) pending, {len(rx['charts'])} chart(s)")
     print(f"verification: {ver['outcome']} ({ver['passed_checks']}/{ver['total_checks']})")
     for c in ver["checks"]:
         if c["status"] != "passed":
@@ -155,8 +185,11 @@ def main(argv=None):
     ap.add_argument("--out", required=True)
     ap.add_argument("--narrative")
     ap.add_argument("--depth", choices=["simple", "comprehensive"], default="simple")
+    ap.add_argument("--approvals", help="approvals.json with approved/rejected reflex approval_ids")
+    ap.add_argument("--reflex-round", type=int, default=1, help="increment after fulfilling reflex data requests")
+    ap.add_argument("--no-reflex", action="store_true", help="skip the Proactive Financial Reflex Engine")
     a = ap.parse_args(argv)
-    return run(a.input_dir, a.config, a.out, a.narrative, a.depth)
+    return run(a.input_dir, a.config, a.out, a.narrative, a.depth, a.approvals, a.reflex_round, not a.no_reflex)
 
 
 if __name__ == "__main__":

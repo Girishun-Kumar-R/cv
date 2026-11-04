@@ -64,6 +64,7 @@ class Renderer:
         self.manifest = []
         self.cur = config["current_period"]["label"]
         self.cmpl = (config.get("comparison_period") or {}).get("label")
+        self.out_dir = None
 
     # ------------------------------------------------------------ lookups
     def find(self, metric_id, period=None, **dims):
@@ -349,7 +350,117 @@ class Renderer:
             out.append("")
         return out
 
-    def render(self, issues, recon, sources, narrative, depth, run_id, spec_version):
+    def reflex_section(self, rx, depth):
+        if not rx or not rx.get("enabled"):
+            return []
+        by_id = self.by_id
+        invs = rx.get("investigations", [])
+        pending = [a for a in rx.get("approval_requests", []) if a["status"] == "pending_approval"]
+        out = ["## Proactive insights (Reflex Engine)", "",
+               f"Ran automatically after the analysis, inside this task only (no background monitoring). "
+               f"Rules evaluated: {len(rx['rules_evaluated'])}; triggers found: {rx['triggers_found']}; investigated: "
+               f"{len(invs)}; suppressed: {len(rx['suppressed'])}; deferred: {len(rx['deferred'])}; approvals "
+               f"pending: {len(pending)}. Everything below was computed read-only from the data provided; nothing "
+               "was sent, uploaded, paid or posted.", ""]
+        for w in rx.get("warnings", []):
+            if w["code"] == "FA-W-RFX-003":
+                out += [f"> Note ({w['code']}): {w['message']}", ""]
+        if invs:
+            out += ["### Triggered findings", "", "| # | Finding | Rule(s) | Severity | Confidence |",
+                    "|---|---|---|---|---|"]
+            for i, inv in enumerate(invs, 1):
+                titles = "; ".join(t["title"] for t in inv["triggers"])
+                out.append(f"| {i} | {titles} | {', '.join(inv['rules'])} | {inv['severity']} | "
+                           f"{Decimal(str(inv['confidence'])):.2f} |")
+            out.append("")
+            insights = [(inv, ins) for inv in invs for ins in inv["insights"]]
+            if insights:
+                out += ["### Insights (auto-generated)", ""]
+                for n, (inv, ins) in enumerate(insights, 1):
+                    out.append(f"{n}. {self.substitute(ins['text'], f'reflex:insight:{n}')} — evidence: "
+                               f"{', '.join(ins['refs'])}")
+                out.append("")
+        scen = [r for r in self.reg if (r.get("parameters") or {}).get("reflex") == "scenario"]
+        if scen:
+            out += ["### Scenarios (deterministic what-ifs)", "", "| Scenario | Result | Formula / assumption |",
+                    "|---|---:|---|"]
+            for r in scen:
+                dim = r["dimension"] or {}
+                name = r["metric_id"] + (f" [{', '.join(f'{k}={v}' for k, v in dim.items())}]" if dim else "")
+                note = (r.get("parameters") or {}).get("assumption") or r["formula_text"]
+                out.append(f"| {name} | {self.cell(r, context='reflex:scenario')} | {note} |")
+            out.append("")
+        recs = rx.get("recommendations", [])
+        if recs:
+            out += ["### Prioritised actions (auto-generated)", "",
+                    "| Rank | Action | Expected impact | Impact | Confidence | Effort | Priority | Approval |",
+                    "|---|---|---|---|---|---|---:|---|"]
+            for r in recs:
+                apr = next((a for a in rx.get("approval_requests", []) if a["approval_id"] == r.get("approval_id")),
+                           None)
+                gate = f"{apr['approval_id']} ({apr['status'].replace('_', ' ')})" if apr else "not needed"
+                review = " — review with your CA" if r.get("professional_review_needed") else ""
+                out.append(f"| {r['rank']} | {r['title']}{review} | {self.substitute(r['impact'], 'reflex:rec')} | "
+                           f"{r['impact_level']} | {r['confidence']} | {r['effort']} | {r['priority_score']} | {gate} |")
+            out.append("")
+        charts = rx.get("charts", [])
+        if charts:
+            out += ["### Charts", ""]
+            for ch in charts:
+                out.append(f"![{ch['title']}]({ch['svg']})")
+                spec_series = self._chart_series(ch)
+                if spec_series:
+                    out.append("")
+                    out.append("Data: " + "; ".join(f"{lbl} {self.cell(by_id.get(cid), context='reflex:chart')}"
+                                                     for lbl, cid in spec_series if by_id.get(cid)))
+                out.append("")
+        reqs = rx.get("data_requests", [])
+        if reqs:
+            out += ["### Additional data requested (read-only)", ""]
+            for q in reqs:
+                out.append(f"- {q['request_id']} ({q['status'].replace('_', ' ')}): {q['dataset']} from "
+                           f"{q['source_category']} → {q['canonical_target']}. {q['reason']}")
+            out.append("")
+        aprs = rx.get("approval_requests", [])
+        if aprs:
+            out += ["### Approvals needed before any external or financial action", ""]
+            for a in aprs:
+                out.append(f"- {a['approval_id']} ({a['action_class'].replace('_', ' ')}, "
+                           f"{a['status'].replace('_', ' ')}): {a['scope']}. On approval: {a['on_approval']}")
+            out.append("")
+        if rx.get("prepared"):
+            out += ["### Prepared after approval", ""]
+            for p in rx["prepared"]:
+                out.append(f"- `{p['file']}` for {p['approval_id']}: {p['status'].replace('_', ' ')}")
+            out.append("")
+        if rx.get("suppressed") or rx.get("deferred"):
+            out += ["### Suppressed and deferred", ""]
+            if depth == "comprehensive":
+                for t in rx.get("suppressed", []):
+                    out.append(f"- Suppressed: {t['title']} ({t['rule_id']}, {t['reason'].replace('_', ' ')})")
+                for d in rx.get("deferred", []):
+                    what = d.get("action_id") or ", ".join(d.get("rules", []))
+                    out.append(f"- Deferred: {d['subject']} — {what} ({d['reason']})")
+            else:
+                out.append(f"{len(rx.get('suppressed', []))} suppressed and {len(rx.get('deferred', []))} deferred "
+                           "item(s); see reflex.json or use comprehensive depth for the list.")
+            out.append("")
+        return out
+
+    def _chart_series(self, ch):
+        import json as _json
+        import os as _os
+        path = _os.path.join(self.out_dir or "", ch["json"]) if getattr(self, "out_dir", None) else None
+        if not path or not _os.path.isfile(path):
+            return []
+        with open(path, encoding="utf-8") as fh:
+            spec = _json.load(fh)
+        pairs = [(s["label"], s["calc_id"]) for s in spec.get("series", [])]
+        for g in spec.get("groups", []):
+            pairs += [(f"{g['label']} {it['series']}", it["calc_id"]) for it in g["items"]]
+        return pairs
+
+    def render(self, issues, recon, sources, narrative, depth, run_id, spec_version, reflex=None):
         c = self.config
         out = [f"# {narrative.get('title') or 'Financial Analysis Report'} — {c.get('company_name', 'Company')}", "",
                f"Period: **{self.cur}** ({c['current_period']['start']} to {c['current_period']['end']})"
@@ -365,6 +476,7 @@ class Renderer:
             out += ["No narrative summary was supplied; key metrics follow.", ""]
         out += self.kpi_section()
         out += self.narrative_section(narrative)
+        out += self.reflex_section(reflex, depth)
         out += self.pnl_section()
         if depth == "comprehensive":
             out += self.expenses_section()
@@ -402,7 +514,9 @@ class Renderer:
         return "\n".join(out)
 
 
-def render_report(register, issues, recon, sources, narrative, config, depth, run_id, spec_version):
+def render_report(register, issues, recon, sources, narrative, config, depth, run_id, spec_version, reflex=None,
+                  out_dir=None):
     r = Renderer(register, config)
-    text = r.render(issues, recon, sources, narrative or {}, depth, run_id, spec_version)
+    r.out_dir = out_dir
+    text = r.render(issues, recon, sources, narrative or {}, depth, run_id, spec_version, reflex)
     return text, r.manifest
